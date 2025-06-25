@@ -4,7 +4,10 @@ run-name: "Build effective-set-generator for commit ${{ github.sha }}"
 
 on:
   workflow_dispatch:
-    
+  push:
+    branches:
+      - '**'  
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: netcracker/qubership-effective-set-generator

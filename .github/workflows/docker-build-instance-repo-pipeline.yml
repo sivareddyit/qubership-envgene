@@ -4,6 +4,9 @@ run-name: "Build Instance Repo pipeline for commit ${{ github.sha }}"
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - '**'  
 
 env:
   REGISTRY: ghcr.io
@@ -43,7 +46,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./github_workflows/env_instance_builder/Dockerfile
+          file: ./github_workflows/instance-repo-pipeline/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

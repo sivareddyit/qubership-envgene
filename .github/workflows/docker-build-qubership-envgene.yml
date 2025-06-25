@@ -4,6 +4,9 @@ run-name: "Build Qubership Envgene for commit ${{ github.sha }}"
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - '**'  
 
 env:
   REGISTRY: ghcr.io
