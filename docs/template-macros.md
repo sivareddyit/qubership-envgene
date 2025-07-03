@@ -55,7 +55,7 @@ using the respective platform's CI variables. This macro is used in [Template De
 tenant: "{{ templates_dir }}/env_templates/composite/tenant.yml.j2"
 ```
 
-**Usage in sample:** [Sample](/samples/templates/env_templates/simple.yaml)
+**Usage in sample:** [Sample](/docs/samples/templates/env_templates/simple.yaml)
 
 ### `current_env.name`
 
@@ -72,7 +72,7 @@ tenant: "{{ templates_dir }}/env_templates/composite/tenant.yml.j2"
 name: "{{current_env.name }}-oss" 
 ```
 
-**Usage in sample:** [Sample](/samples/templates/env_templates/composite/namespaces/oss.yml.j2)
+**Usage in sample:** [Sample](/docs/samples/templates/env_templates/composite/namespaces/oss.yml.j2)
 
 ### `current_env.tenant`
 
@@ -89,7 +89,7 @@ name: "{{current_env.name }}-oss"
 name: "{{ current_env.tenant }}"
 ```
 
-**Usage in sample:** [Sample](/samples/templates/env_templates/composite/tenant.yml.j2)
+**Usage in sample:** [Sample](/docs/samples/templates/env_templates/composite/tenant.yml.j2)
 
 ### `current_env.cloud`
 
@@ -106,7 +106,7 @@ name: "{{ current_env.tenant }}"
 name: "{{ current_env.cloud }}"
 ```
 
-**Usage in sample:** [Sample](/samples/templates/env_templates/simple/cloud.yml.j2)
+**Usage in sample:** [Sample](/docs/samples/templates/env_templates/simple/cloud.yml.j2)
 
 ### `current_env.cloudNameWithCluster`
 
@@ -134,7 +134,7 @@ Notes:
 name: "{{ current_env.cloudNameWithCluster }}"
 ```
 
-**Usage in sample:** [Sample](/samples/templates/env_templates/composite/cloud.yml.j2)
+**Usage in sample:** [Sample](/docs/samples/templates/env_templates/composite/cloud.yml.j2)
 
 ### `current_env.cmdb_name`
 
@@ -185,7 +185,7 @@ CMDB-URL: "{{ current_env.current_env.cmdb_url }}"
 description: "{{ current_env.description }}"
 ```
 
-**Usage in sample:** [Sample](/samples/templates/env_templates/simple/tenant.yml.j2)
+**Usage in sample:** [Sample](/docs/samples/templates/env_templates/simple/tenant.yml.j2)
 
 ### `current_env.owners`
 
@@ -202,7 +202,7 @@ description: "{{ current_env.description }}"
 owners: "{{ current_env.owners }}"
 ```
 
-**Usage in sample:** [Sample](/samples/templates/env_templates/simple/tenant.yml.j2)
+**Usage in sample:** [Sample](/docs/samples/templates/env_templates/simple/tenant.yml.j2)
 
 ### `current_env.env_template`
 
@@ -238,7 +238,7 @@ deployParameters:
   INSTANCES_LEVEL_VAR_CLOUD: "{{ current_env.additionalTemplateVariables.CLOUD_LEVEL_PARAM1 }}"
 ```
 
-**Usage in sample:** [Sample](/samples/templates/env_templates/composite/namespaces/billing.yaml.j2)
+**Usage in sample:** [Sample](/docs/samples/templates/env_templates/composite/namespaces/billing.yaml.j2)
 
 ### `current_env.cloud_passport`
 
@@ -307,8 +307,7 @@ The value of the `namespace` attribute in this variable is obtained from the `na
 
 **Usage in sample:**
 
-- [Sample template](/samples/templates/env_templates/composite/namespaces/bss.yml.j2)
-- [Sample inventory](/samples/environments/sample-cloud-name/composite-with-creds/)
+- [Sample template](/docs/samples/templates/env_templates/composite/namespaces/bss.yml.j2)
 
 ### `current_env.cluster.cloud_api_protocol`
 
@@ -329,7 +328,7 @@ protocol: "{{current_env.cluster.cloud_api_protocol}}"
 
 **Usage in sample:**
 
-- [Sample](/samples/templates/env_templates/composite/cloud.yml.j2)
+- [Sample](/docs/samples/templates/env_templates/composite/cloud.yml.j2)
 
 ### `current_env.cluster.cloud_api_url`
 
@@ -350,7 +349,7 @@ apiUrl: "{{current_env.cluster.cloud_api_url}}"
 
 **Usage in sample:**
 
-- [Sample](/samples/templates/env_templates/composite/cloud.yml.j2)
+- [Sample](/docs/samples/templates/env_templates/composite/cloud.yml.j2)
 
 ### `current_env.cluster.cloud_api_port`
 
@@ -371,7 +370,7 @@ apiPort: "{{current_env.cluster.cloud_api_port}}"
 
 **Usage in sample:**
 
-- [Sample](/samples/templates/env_templates/composite/cloud.yml.j2)
+- [Sample](/docs/samples/templates/env_templates/composite/cloud.yml.j2)
 
 ### `current_env.cluster.cloud_public_url`
 
@@ -390,7 +389,7 @@ Value is parsed from `env_definition.inventory.clusterUrl` in the [Environment I
 
 **Usage in sample:**
 
-- [Sample](/samples/templates/env_templates/composite/cloud.yml.j2)
+- [Sample](/docs/samples/templates/env_templates/composite/cloud.yml.j2)
 
 ## Credential macro
 
@@ -416,7 +415,7 @@ kafka_password: ${envgen.creds.get('kafka-cred').password}
 k8s_token: ${envgen.creds.get('k8s-cred').secret}
 ```
 
-**Usage in sample:** [Sample](/samples/templates/parameters/composite-sample/test-deploy-creds.yml)
+**Usage in sample:** [Sample](/docs/samples/templates/parameters/migration/test-deploy-creds.yml)
 
 ## Deprecated macros
 
