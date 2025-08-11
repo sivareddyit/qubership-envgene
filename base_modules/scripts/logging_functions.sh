@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 function log_info() {
   echo -e "[\\e[1;94mINFO\\e[0m] $*"
 }
