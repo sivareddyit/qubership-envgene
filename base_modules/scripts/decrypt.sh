@@ -21,7 +21,7 @@ fi
 if [ -n "${!FERNET_KEY}" ] && [ -f "${encrypt_file_path}" ] && [ "${DECRYPT_TYPE}" = 'fernet' ]; then
 
     echo "${encrypt_file_path} exists and key variable is defined"
-    python  /module/scripts/decrypt_fernet.py decrypt_cred_file --file_path "${encrypt_file_path}" --secret_key "${!FERNET_KEY}"
+    python /module/scripts/decrypt_fernet.py decrypt_cred_file --file_path "${encrypt_file_path}" --secret_key "${!FERNET_KEY}"
 elif [ -n "${!SOPS_AGE_PRIVATE_KEY}" ] && [ -f "${encrypt_file_path}" ] && [ "${DECRYPT_TYPE}" = 'sops' ]; then
     SOPS_AGE_KEY="${!SOPS_AGE_PRIVATE_KEY}"
     export SOPS_AGE_KEY
