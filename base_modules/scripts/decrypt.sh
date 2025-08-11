@@ -26,7 +26,7 @@ elif [ -n "${!SOPS_AGE_PRIVATE_KEY}" ] && [ -f "${encrypt_file_path}" ] && [ "${
     SOPS_AGE_KEY="${!SOPS_AGE_PRIVATE_KEY}"
     export SOPS_AGE_KEY
     sops --decrypt -i "${encrypt_file_path}"
-    echo "${encrypt_file_path} was decrypted" 
+    echo "${encrypt_file_path} was decrypted"
 elif [ "${DECRYPT_TYPE}" == 'none' ]; then
     echo "Skipping decryption...."
 else

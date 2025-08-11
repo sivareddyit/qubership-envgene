@@ -32,10 +32,10 @@ if [[ "$include_list" != "" ]]; then
 
                 cat<<YAML
 - name: ${module_name}
-  project: ${module_project}
-  group: ${module_group}
-  full_path: ${module_full_path}
-  version: ${module_version}
+    project: ${module_project}
+    group: ${module_group}
+    full_path: ${module_full_path}
+    version: ${module_version}
 YAML
             else
                 echo "Included file is not a module or pipeline template ($include_project_file)" >/dev/stderr
