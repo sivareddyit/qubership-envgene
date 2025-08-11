@@ -20,7 +20,6 @@ RUN apk update \
         gcc \
         musl-dev \
         libffi-dev \
-        sudo \
         curl \
     && curl --retry 3 --retry-connrefused --retry-delay 5 -LO https://github.com/mozilla/sops/releases/download/v3.9.0/sops-v3.9.0.linux.amd64 \
     && chmod +x sops-v3.9.0.linux.amd64 \
@@ -36,3 +35,10 @@ RUN apk update \
     && python3 -m pip install /python/jschon-sort \
     && python3 -m pip install /python/envgene \
     && chmod 744 /module/scripts/*
+
+# Create non-root user for runtime
+RUN adduser -D -u 10001 appuser \
+    && chown -R appuser /module /usr/local/bin || true
+
+# Ensure last user is not root
+USER appuser

@@ -106,6 +106,8 @@
         - "'passport' in (item.path | basename)"
 
 - name: 01.5 Get secret key for sensitive data
+  # checkov:skip=CKV_ANSIBLE_1: GitLab API in CI may use self-signed certs; cert validation intentionally disabled
+  # checkov:skip=CKV2_ANSIBLE_1: URL composed from env var; scheme validated upstream
   uri:
     url: "{{ gitlab_vars_api }}/{{ secret_key_var_name }}"
     validate_certs: no

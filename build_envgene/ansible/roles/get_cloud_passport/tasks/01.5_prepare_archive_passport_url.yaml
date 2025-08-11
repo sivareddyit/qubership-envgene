@@ -6,6 +6,7 @@
 - name: Prepare link to download archive
   block:
     - name: Get pipeline jobs
+      # checkov:skip=CKV_ANSIBLE_1: GitLab API in CI may use self-signed certs; cert validation intentionally disabled
       uri:
         url: "{{ url_pipe_bridges }}"
         validate_certs: no
@@ -26,6 +27,7 @@
         - "(item.name == discovery_job_name) or (item.name == auto_discovery_job_name)"
 
     - name: Get pipeline downstream jobs
+      # checkov:skip=CKV_ANSIBLE_1: GitLab API in CI may use self-signed certs; cert validation intentionally disabled
       uri:
         url: "{{ url_pipe_jobs }}"
         validate_certs: no

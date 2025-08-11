@@ -16,7 +16,6 @@ RUN apk add --no-cache \
     curl \
     jq \
     openssh-client \
-    sudo \
     zip \
     unzip
 
@@ -102,7 +101,6 @@ RUN apk add --no-cache \
     age \
     git \
     openssh-client \
-    sudo \
     zip \
     unzip
 
@@ -149,8 +147,13 @@ ENV PATH=/module/venv/bin:$PATH \
     ANSIBLE_LIBRARY=/module/ansible/library \
     ANSIBLE_COLLECTIONS_PATH=/module/venv/lib/python3.12/site-packages/ansible_collections:/module/ansible/collections
 
-# Simple root-based container for CI/CD environments
-# This container runs as root to avoid permission issues in CI/CD pipelines
+# Create a non-root user and set permissions
+RUN adduser -D -u 10001 appuser && \
+    chown -R appuser /module /build_env /python /usr/local/bin/sops || true
+
+# Use non-root user by default
+USER appuser
+
 WORKDIR /module/ansible
 
 # Health check
