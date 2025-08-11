@@ -36,7 +36,7 @@ COPY build_* create_* produce_* sort* /build_env/
 COPY scripts /build_env/scripts
 COPY env-builder /build_env/env-builder
 COPY schemas /build_env/schemas
-
+COPY base_modules/scripts /module/scripts
 ENV ANSIBLE_LIBRARY=/module/ansible/library
 
 # Create virtual environment and install Python packages

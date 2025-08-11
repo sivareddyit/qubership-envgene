@@ -17,18 +17,16 @@ RUN apk add --no-cache \
     sed \
     age
 
-# Copy configuration files
-COPY build_gcip/base-deps/sources.list /etc/apk/repositories
-COPY build_gcip/base-deps/pip.conf /etc/pip.conf
-COPY build_gcip/base-deps/constraint.txt /build/constraint.txt
-COPY build_gcip/base-deps/requirements.txt /build/requirements.txt
+# Copy configuration files (merged into build directory)
+COPY build_gcip/build/sources.list /etc/apk/repositories
 COPY build_gcip/build/pip.conf /etc/pip.conf
-COPY build_gcip/build/requirements.txt /build/app_requirements.txt
+COPY build_gcip/build/constraint.txt /build/constraint.txt
+COPY build_gcip/build/requirements.txt /build/requirements.txt
 
 # Copy source code
 COPY python /python
 COPY schemas /module/schemas
-COPY build_gcip/base-deps/scripts /module/scripts
+COPY base_modules/scripts /module/scripts
 COPY build_gcip/scripts /module/scripts
 COPY build_gcip/pipegene_plugins /module/scripts/pipegene_plugins
 
@@ -39,7 +37,6 @@ RUN /module/venv/bin/pip install --no-cache-dir --retries 10 --timeout 60 -r /bu
 RUN /module/venv/bin/pip install /python/integration
 RUN /module/venv/bin/pip install /python/jschon-sort
 RUN /module/venv/bin/pip install /python/envgene
-RUN /module/venv/bin/pip install --no-cache-dir --no-deps -r /build/app_requirements.txt
 RUN /module/venv/bin/pip install PyYAML
 
 # Download and install SOPS for secrets management
