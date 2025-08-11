@@ -2,16 +2,16 @@
 
 CI_FILE="$1"
 
-include_list=$(cat "${CI_FILE}" | shyaml get-value include 2>/dev/null || true)
+include_list=$(shyaml get-value include < "${CI_FILE}" 2>/dev/null || true)
 if [[ "$include_list" != "" ]]; then
-    include_list_length=$(($(cat "${CI_FILE}" | shyaml get-value include | shyaml get-length)-1))
+    include_list_length=$(( $(shyaml get-value include < "${CI_FILE}" | shyaml get-length) - 1 ))
     for i in $(seq 0 $include_list_length)
     do
-        include_project=$(cat "${CI_FILE}" | shyaml get-value include."$i" | shyaml get-value project 2>/dev/null || true)
+        include_project=$(shyaml get-value include."$i" < "${CI_FILE}" 2>/dev/null | shyaml get-value project 2>/dev/null || true)
         if [[ "$include_project" != "" ]]; then
-            include_project_full_path=$(cat "${CI_FILE}" | shyaml get-value include."$i" | shyaml get-value project)
-            include_project_branch=$(cat "${CI_FILE}" | shyaml get-value include."$i" | shyaml get-value ref)
-            include_project_file=$(cat "${CI_FILE}" | shyaml get-value include."$i" | shyaml get-value file)
+            include_project_full_path=$(shyaml get-value include."$i" < "${CI_FILE}" | shyaml get-value project)
+            include_project_branch=$(shyaml get-value include."$i" < "${CI_FILE}" | shyaml get-value ref)
+            include_project_file=$(shyaml get-value include."$i" < "${CI_FILE}" | shyaml get-value file)
 
             include_project_group=${include_project_full_path%/*}
             include_project_repo=${include_project_full_path##*/}
@@ -41,7 +41,8 @@ YAML
                 echo "Included file is not a module or pipeline template ($include_project_file)" >/dev/stderr
             fi
         else
-            echo "Included file of unsupported type ($(cat \"${CI_FILE}\" | shyaml get-value include.\"$i\")). Only inlude:file is supported now" >/dev/stderr
+            unsupported_type=$(shyaml get-value include."$i" < "${CI_FILE}" 2>/dev/null || true)
+            echo "Included file of unsupported type (${unsupported_type}). Only inlude:file is supported now" >/dev/stderr
         fi
     done
 else
