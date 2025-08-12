@@ -1,9 +1,9 @@
 ---
 
-# Make Checkov return warnings instead of errors
-soft-fail: true
-
-quiet: true
+# Show warnings but don't fail the build
+quiet: false
+output: cli
+verbosity: INFO
 
 skip-check:
 # https://www.checkov.io/5.Policy%20Index/kubernetes.html

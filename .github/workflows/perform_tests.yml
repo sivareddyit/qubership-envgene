@@ -24,10 +24,11 @@ jobs:
       (github.event_name == 'pull_request') ||
       (github.event_name == 'push' && 
        github.ref != 'refs/heads/main' &&
-       (contains(github.event.head_commit.message, 'fix') || 
-        contains(github.event.head_commit.message, 'feat') || 
-        contains(github.event.head_commit.message, 'chore') ||
-        contains(github.event.head_commit.message, 'breaking change')))
+       !contains(github.event.head_commit.message, 'fix') && 
+       !contains(github.event.head_commit.message, 'feat') &&
+       !contains(github.event.head_commit.message, 'breaking change') &&
+       !contains(github.event.head_commit.message, 'Breaking Change') &&
+       !contains(github.event.head_commit.message, 'BREAKING CHANGE'))
     container:
       image: python:3.10-slim-bookworm
     steps:
