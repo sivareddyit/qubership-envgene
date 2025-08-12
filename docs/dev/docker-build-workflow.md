@@ -42,7 +42,7 @@ This ensures comprehensive validation before code is merged. Docker builds are n
 
 The workflow builds four Docker images:
 
-1. **Qubership GCIP** (`qubership-gcip`)
+1. **Qubership PIPEGENE** (`qubership-pipegene`)
 2. **Qubership Envgene** (`qubership-envgene`) 
 3. **Instance Repo Pipeline** (`qubership-instance-repo-pipeline`)
 4. **Effective Set Generator** (`qubership-effective-set-generator`)
@@ -95,7 +95,7 @@ When running manually, you can choose which images to build:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `build-gcip` | Build Qubership GCIP image | ✅ Enabled |
+| `build-pipegene` | Build Qubership PIPEGENE image | ✅ Enabled |
 | `build-envgene` | Build Qubership Envgene image | ✅ Enabled |
 | `build-pipeline` | Build Instance Repo Pipeline image | ✅ Enabled |
 | `build-effective-set` | Build Effective Set Generator image | ✅ Enabled |
@@ -112,13 +112,13 @@ When running manually, you can choose which images to build:
 
 #### Build Multiple Images
 - Enable only the specific images you need
-- Example: Enable `build-gcip` and `build-envgene` to build two images
+- Example: Enable `build-pipegene` and `build-envgene` to build two images
 
 ## Docker images execution Flow
 
 1. **Tests** - Runs first and must pass
 2. **Build Jobs** - Run in parallel after tests pass:
-   - `build-qubership-gcip`
+   - `build-qubership-pipegene`
    - `build-qubership-envgene`
    - `build-instance-repo-pipeline`
    - `build-effective-set-jar --> build-effective-set-generator`
@@ -139,7 +139,7 @@ ghcr.io/<repository-owner>/<image-name>
 
 ### Example Image Names
 
-- `ghcr.io/netcracker/qubership-gcip`
+- `ghcr.io/netcracker/qubership-pipegene`
 - `ghcr.io/netcracker/qubership-envgene`
 - `ghcr.io/netcracker/qubership-instance-repo-pipeline`
 - `ghcr.io/netcracker/qubership-effective-set-generator`
@@ -172,8 +172,8 @@ ghcr.io/<repository-owner>/<image-name>
 1. Check Dockerfile syntax and paths
 2. Verify required secrets are configured:
    - `GITHUB_TOKEN` (automatic)
-   - `GIT_USER` (for GCIP and Effective Set)
-   - `GIT_TOKEN` (for GCIP and Effective Set)
+   - `GIT_USER` (for PIPEGENE and Effective Set)
+   - `GIT_TOKEN` (for PIPEGENE and Effective Set)
    - `GH_ACCESS_TOKEN` (for Envgene and Pipeline)
 3. Check if Dockerfile exists in the specified path
 

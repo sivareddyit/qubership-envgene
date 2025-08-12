@@ -18,17 +18,17 @@ RUN apk add --no-cache \
     age
 
 # Copy configuration files (merged into build directory)
-COPY build_gcip/build/sources.list /etc/apk/repositories
-COPY build_gcip/build/pip.conf /etc/pip.conf
-COPY build_gcip/build/constraint.txt /build/constraint.txt
-COPY build_gcip/build/requirements.txt /build/requirements.txt
+COPY build_pipegene/build/sources.list /etc/apk/repositories
+COPY build_pipegene/build/pip.conf /etc/pip.conf
+COPY build_pipegene/build/constraint.txt /build/constraint.txt
+COPY build_pipegene/build/requirements.txt /build/requirements.txt
 
 # Copy source code
 COPY python /python
 COPY schemas /module/schemas
 COPY base_modules/scripts /module/scripts
-COPY build_gcip/scripts /module/scripts
-COPY build_gcip/pipegene_plugins /module/scripts/pipegene_plugins
+COPY build_pipegene/scripts /module/scripts
+COPY build_pipegene/pipegene_plugins /module/scripts/pipegene_plugins
 
 # Create virtual environment and install Python packages
 RUN python -m venv /module/venv
