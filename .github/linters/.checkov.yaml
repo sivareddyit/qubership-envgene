@@ -1,7 +1,6 @@
 ---
 
-# Show warnings but don't fail the build
-quiet: false
+quiet: true
 
 skip-check:
 # https://www.checkov.io/5.Policy%20Index/kubernetes.html
