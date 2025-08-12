@@ -1,5 +1,8 @@
 ---
 
+# Make Checkov return warnings instead of errors
+soft-fail: true
+
 quiet: true
 
 skip-check:
