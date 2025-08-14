@@ -8,12 +8,6 @@ SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 RUN set -eux; \
     apk update; \
     ver() { apk list --verbose --available "$1" | head -n1 | sed -E "s/^$1-//; s/ .*//"; }; \
-    # resolve openssh package name across Alpine variants
-    OPENSSH_PKG=openssh-client; \
-    if ! apk list --available openssh-client >/dev/null 2>&1; then \
-        if apk list --available openssh >/dev/null 2>&1; then OPENSSH_PKG=openssh; \
-        elif apk list --available openssh-client-default >/dev/null 2>&1; then OPENSSH_PKG=openssh-client-default; fi; \
-    fi; \
     apk add --no-cache \
         gcc="$(ver gcc)" \
         musl-dev="$(ver musl-dev)" \
@@ -25,7 +19,7 @@ RUN set -eux; \
         git="$(ver git)" \
         curl="$(ver curl)" \
         jq="$(ver jq)" \
-        "${OPENSSH_PKG}=$(ver "${OPENSSH_PKG}")" \
+        openssh="$(ver openssh)" \
         zip="$(ver zip)" \
         unzip="$(ver unzip)"; \
     rm -rf /var/cache/apk/*
@@ -99,12 +93,6 @@ RUN set -eux; \
     # yq may be packaged as yq or yq-go depending on repo; prefer yq, fallback to yq-go
     YQ_PKG=yq; \
     if ! apk list --available yq >/dev/null 2>&1; then YQ_PKG=yq-go; fi; \
-    # resolve openssh package name across Alpine variants
-    OPENSSH_PKG=openssh-client; \
-    if ! apk list --available openssh-client >/dev/null 2>&1; then \
-        if apk list --available openssh >/dev/null 2>&1; then OPENSSH_PKG=openssh; \
-        elif apk list --available openssh-client-default >/dev/null 2>&1; then OPENSSH_PKG=openssh-client-default; fi; \
-    fi; \
     apk add --no-cache \
         bash="$(ver bash)" \
         ca-certificates="$(ver ca-certificates)" \
@@ -114,7 +102,7 @@ RUN set -eux; \
         gettext="$(ver gettext)" \
         age="$(ver age)" \
         git="$(ver git)" \
-        "${OPENSSH_PKG}=$(ver "${OPENSSH_PKG}")" \
+        openssh="$(ver openssh)" \
         zip="$(ver zip)" \
         unzip="$(ver unzip)"; \
     rm -rf /var/cache/apk/*
