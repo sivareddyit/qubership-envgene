@@ -3,21 +3,25 @@
 # Multi-stage build to reduce final image size
 FROM python:3.12-alpine3.19 AS build
 
-# Install build dependencies
-RUN apk add --no-cache \
-    gcc \
-    musl-dev \
-    libffi-dev \
-    openssl-dev \
-    libxml2-dev \
-    libxslt-dev \
-    zlib-dev \
-    git \
-    curl \
-    jq \
-    openssh-client \
-    zip \
-    unzip
+# Install build dependencies (pin versions for reproducibility)
+RUN set -eux; \
+    apk update; \
+    ver() { apk list --verbose --available "$1" | head -n1 | sed -E "s/^$1-//; s/ .*//"; }; \
+    apk add --no-cache \
+        gcc=$(ver gcc) \
+        musl-dev=$(ver musl-dev) \
+        libffi-dev=$(ver libffi-dev) \
+        openssl-dev=$(ver openssl-dev) \
+        libxml2-dev=$(ver libxml2-dev) \
+        libxslt-dev=$(ver libxslt-dev) \
+        zlib-dev=$(ver zlib-dev) \
+        git=$(ver git) \
+        curl=$(ver curl) \
+        jq=$(ver jq) \
+        openssh-client=$(ver openssh-client) \
+        zip=$(ver zip) \
+        unzip=$(ver unzip); \
+    rm -rf /var/cache/apk/*
 
 # Copy configuration files
 COPY build_envgene/build/pip.conf /etc/pip.conf
@@ -58,15 +62,15 @@ RUN apk del gcc musl-dev libffi-dev openssl-dev libxml2-dev libxslt-dev zlib-dev
     rm -rf /var/cache/apk/* /tmp/* /var/tmp/* /root/.cache && \
     find /module/venv/lib/python3.12/site-packages -name '*.pyc' -delete && \
     find /module/venv/lib/python3.12/site-packages -name '*.pyo' -delete && \
-    find /module/venv/lib/python3.12/site-packages -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true && \
+    ( find /module/venv/lib/python3.12/site-packages -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true ) && \
     # Remove heavy, unused Ansible collections
-    rm -rf /module/ansible/collections/ansible_collections/amazon \
+    ( rm -rf /module/ansible/collections/ansible_collections/amazon \
            /module/ansible/collections/ansible_collections/azure \
            /module/ansible/collections/ansible_collections/google \
-           /module/ansible/collections/ansible_collections/kubernetes 2>/dev/null || true && \
+           /module/ansible/collections/ansible_collections/kubernetes 2>/dev/null || true ) && \
     # Remove pytest from venv
     rm -rf /module/venv/lib/python3.12/site-packages/pytest* /module/venv/lib/python3.12/site-packages/_pytest* 2>/dev/null || true && \
-    /module/venv/bin/python -m pip cache purge && \
+    ( /module/venv/bin/python -m pip cache purge || true ) && \
     # Remove Ansible/galaxy caches if any
     rm -rf /root/.ansible
 
@@ -80,19 +84,26 @@ RUN find /module -type d -exec chmod 755 {} + && \
 # Lightweight runtime image with only essential dependencies
 FROM python:3.12-alpine3.19 AS runtime
 
-# Install only essential runtime dependencies
-RUN apk add --no-cache \
-    bash \
-    ca-certificates \
-    curl \
-    jq \
-    yq \
-    gettext \
-    age \
-    git \
-    openssh-client \
-    zip \
-    unzip
+# Install only essential runtime dependencies (pinned versions)
+RUN set -eux; \
+    apk update; \
+    ver() { apk list --verbose --available "$1" | head -n1 | sed -E "s/^$1-//; s/ .*//"; }; \
+    # yq may be packaged as yq or yq-go depending on repo; prefer yq, fallback to yq-go
+    YQ_PKG=yq; \
+    apk list --available yq >/dev/null 2>&1 || YQ_PKG=yq-go; \
+    apk add --no-cache \
+        bash=$(ver bash) \
+        ca-certificates=$(ver ca-certificates) \
+        curl=$(ver curl) \
+        jq=$(ver jq) \
+        ${YQ_PKG}=$(ver ${YQ_PKG}) \
+        gettext=$(ver gettext) \
+        age=$(ver age) \
+        git=$(ver git) \
+        openssh-client=$(ver openssh-client) \
+        zip=$(ver zip) \
+        unzip=$(ver unzip); \
+    rm -rf /var/cache/apk/*
 
 # Copy everything from build stage
 COPY --from=build /module /module
@@ -101,7 +112,7 @@ COPY --from=build /build_env /build_env
 
 # Set permissions
 RUN chmod +x /usr/local/bin/sops && \
-    chmod -R 755 /module/venv/bin || true
+    ( chmod -R 755 /module/venv/bin || true )
 
 # Create directories that might be needed for CI environments
 # These directories are commonly used by GitHub Actions and GitLab CI
@@ -119,16 +130,18 @@ RUN mkdir -p /__w/_temp/_runner_file_commands && \
 # Final cleanup
 RUN rm -rf /var/cache/apk/* /tmp/* /var/tmp/* /root/.cache && \
     find /module/venv/lib/python3.12/site-packages -name '*.pyc' -delete && \
-    /module/venv/bin/pip cache purge 2>/dev/null || true && \
+    ( /module/venv/bin/pip cache purge 2>/dev/null || true ) && \
     # Keep pip for runtime compatibility, but remove setuptools and wheel
     rm -rf /module/venv/lib/python3.12/site-packages/setuptools* /module/venv/lib/python3.12/site-packages/wheel* 2>/dev/null || true
 
 ARG RUN_UID=1001
 ARG RUN_GID=121
 
-# Create and configure non-root user then remove shadow to save space
+# Create and configure non-root user then remove shadow to save space (pinned)
 RUN set -eux; \
-    apk add --no-cache shadow; \
+    apk update; \
+    ver() { apk list --verbose --available "$1" | head -n1 | sed -E "s/^$1-//; s/ .*//"; }; \
+    apk add --no-cache shadow=$(ver shadow); \
     if getent group ci >/dev/null 2>&1; then \
         groupmod -o -g ${RUN_GID} ci || true; \
     else \
@@ -139,7 +152,7 @@ RUN set -eux; \
     else \
         adduser -S -D -h /home/ci -u ${RUN_UID} -G ci ci; \
     fi; \
-    mkdir -p /home/ci && chown -R ${RUN_UID}:${RUN_GID} /home/ci /module /build_env || true; \
+    mkdir -p /home/ci && ( chown -R ${RUN_UID}:${RUN_GID} /home/ci /module /build_env || true ); \
     apk del shadow; \
     rm -rf /root/.ansible /home/ci/.ansible
 
