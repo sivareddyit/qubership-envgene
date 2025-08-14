@@ -65,10 +65,10 @@ RUN apk del gcc musl-dev libffi-dev openssl-dev libxml2-dev libxslt-dev zlib-dev
     find /module/venv/lib/python3.12/site-packages -name '*.pyo' -delete && \
     ( find /module/venv/lib/python3.12/site-packages -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true ) && \
     # Remove heavy, unused Ansible collections
-    ( rm -rf /module/ansible/collections/ansible_collections/amazon \
-           /module/ansible/collections/ansible_collections/azure \
-           /module/ansible/collections/ansible_collections/google \
-           /module/ansible/collections/ansible_collections/kubernetes 2>/dev/null || true ) && \
+        ( rm -rf /module/ansible/collections/ansible_collections/amazon \
+                /module/ansible/collections/ansible_collections/azure \
+                /module/ansible/collections/ansible_collections/google \
+                /module/ansible/collections/ansible_collections/kubernetes 2>/dev/null || true ) && \
     # Remove pytest from venv
     ( rm -rf /module/venv/lib/python3.12/site-packages/pytest* /module/venv/lib/python3.12/site-packages/_pytest* 2>/dev/null || true ) && \
     ( /module/venv/bin/python -m pip cache purge || true ) && \
