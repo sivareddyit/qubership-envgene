@@ -2,25 +2,26 @@
 # Stage 1: Build
 # Multi-stage build to reduce final image size
 FROM python:3.12-alpine3.19 AS build
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 # Install build dependencies (pin versions for reproducibility)
 RUN set -eux; \
     apk update; \
     ver() { apk list --verbose --available "$1" | head -n1 | sed -E "s/^$1-//; s/ .*//"; }; \
     apk add --no-cache \
-        gcc=$(ver gcc) \
-        musl-dev=$(ver musl-dev) \
-        libffi-dev=$(ver libffi-dev) \
-        openssl-dev=$(ver openssl-dev) \
-        libxml2-dev=$(ver libxml2-dev) \
-        libxslt-dev=$(ver libxslt-dev) \
-        zlib-dev=$(ver zlib-dev) \
-        git=$(ver git) \
-        curl=$(ver curl) \
-        jq=$(ver jq) \
-        openssh-client=$(ver openssh-client) \
-        zip=$(ver zip) \
-        unzip=$(ver unzip); \
+        gcc="$(ver gcc)" \
+        musl-dev="$(ver musl-dev)" \
+        libffi-dev="$(ver libffi-dev)" \
+        openssl-dev="$(ver openssl-dev)" \
+        libxml2-dev="$(ver libxml2-dev)" \
+        libxslt-dev="$(ver libxslt-dev)" \
+        zlib-dev="$(ver zlib-dev)" \
+        git="$(ver git)" \
+        curl="$(ver curl)" \
+        jq="$(ver jq)" \
+        openssh-client="$(ver openssh-client)" \
+        zip="$(ver zip)" \
+        unzip="$(ver unzip)"; \
     rm -rf /var/cache/apk/*
 
 # Copy configuration files
@@ -69,7 +70,7 @@ RUN apk del gcc musl-dev libffi-dev openssl-dev libxml2-dev libxslt-dev zlib-dev
            /module/ansible/collections/ansible_collections/google \
            /module/ansible/collections/ansible_collections/kubernetes 2>/dev/null || true ) && \
     # Remove pytest from venv
-    rm -rf /module/venv/lib/python3.12/site-packages/pytest* /module/venv/lib/python3.12/site-packages/_pytest* 2>/dev/null || true && \
+    ( rm -rf /module/venv/lib/python3.12/site-packages/pytest* /module/venv/lib/python3.12/site-packages/_pytest* 2>/dev/null || true ) && \
     ( /module/venv/bin/python -m pip cache purge || true ) && \
     # Remove Ansible/galaxy caches if any
     rm -rf /root/.ansible
@@ -83,6 +84,7 @@ RUN find /module -type d -exec chmod 755 {} + && \
 # Stage 2: Runtime
 # Lightweight runtime image with only essential dependencies
 FROM python:3.12-alpine3.19 AS runtime
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 # Install only essential runtime dependencies (pinned versions)
 RUN set -eux; \
@@ -90,19 +92,19 @@ RUN set -eux; \
     ver() { apk list --verbose --available "$1" | head -n1 | sed -E "s/^$1-//; s/ .*//"; }; \
     # yq may be packaged as yq or yq-go depending on repo; prefer yq, fallback to yq-go
     YQ_PKG=yq; \
-    apk list --available yq >/dev/null 2>&1 || YQ_PKG=yq-go; \
+    if ! apk list --available yq >/dev/null 2>&1; then YQ_PKG=yq-go; fi; \
     apk add --no-cache \
-        bash=$(ver bash) \
-        ca-certificates=$(ver ca-certificates) \
-        curl=$(ver curl) \
-        jq=$(ver jq) \
-        ${YQ_PKG}=$(ver ${YQ_PKG}) \
-        gettext=$(ver gettext) \
-        age=$(ver age) \
-        git=$(ver git) \
-        openssh-client=$(ver openssh-client) \
-        zip=$(ver zip) \
-        unzip=$(ver unzip); \
+        bash="$(ver bash)" \
+        ca-certificates="$(ver ca-certificates)" \
+        curl="$(ver curl)" \
+        jq="$(ver jq)" \
+        "${YQ_PKG}=$(ver "${YQ_PKG}")" \
+        gettext="$(ver gettext)" \
+        age="$(ver age)" \
+        git="$(ver git)" \
+        openssh-client="$(ver openssh-client)" \
+        zip="$(ver zip)" \
+        unzip="$(ver unzip)"; \
     rm -rf /var/cache/apk/*
 
 # Copy everything from build stage
@@ -141,18 +143,18 @@ ARG RUN_GID=121
 RUN set -eux; \
     apk update; \
     ver() { apk list --verbose --available "$1" | head -n1 | sed -E "s/^$1-//; s/ .*//"; }; \
-    apk add --no-cache shadow=$(ver shadow); \
+    apk add --no-cache shadow="$(ver shadow)"; \
     if getent group ci >/dev/null 2>&1; then \
-        groupmod -o -g ${RUN_GID} ci || true; \
+        groupmod -o -g "${RUN_GID}" ci || true; \
     else \
-        addgroup -S -g ${RUN_GID} ci; \
+        addgroup -S -g "${RUN_GID}" ci; \
     fi; \
     if id -u ci >/dev/null 2>&1; then \
-        usermod -o -u ${RUN_UID} -g ${RUN_GID} -d /home/ci -m ci || true; \
+        usermod -o -u "${RUN_UID}" -g "${RUN_GID}" -d /home/ci -m ci || true; \
     else \
-        adduser -S -D -h /home/ci -u ${RUN_UID} -G ci ci; \
+        adduser -S -D -h /home/ci -u "${RUN_UID}" -G ci ci; \
     fi; \
-    mkdir -p /home/ci && ( chown -R ${RUN_UID}:${RUN_GID} /home/ci /module /build_env || true ); \
+    mkdir -p /home/ci && ( chown -R "${RUN_UID}:${RUN_GID}" /home/ci /module /build_env || true ); \
     apk del shadow; \
     rm -rf /root/.ansible /home/ci/.ansible
 

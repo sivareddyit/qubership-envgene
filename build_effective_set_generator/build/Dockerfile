@@ -1,6 +1,7 @@
 #######################################
 # Stage 1
 FROM ghcr.io/netcracker/qubership-base-module-dockerimage:v2.0.0
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 USER root
 
@@ -16,17 +17,13 @@ ENV ANSIBLE_LIBRARY=/module/ansible/library:$ANSIBLE_LIBRARY
 
 RUN set -eux; \
     apk update; \
-    GIT_VERSION=$(apk info -v git | head -n1 | awk '{print $1}' | cut -d- -f2-); \
-    GCC_VERSION=$(apk info -v gcc | head -n1 | awk '{print $1}' | cut -d- -f2-); \
-    MUSL_DEV_VERSION=$(apk info -v musl-dev | head -n1 | awk '{print $1}' | cut -d- -f2-); \
-    LIBFFI_DEV_VERSION=$(apk info -v libffi-dev | head -n1 | awk '{print $1}' | cut -d- -f2-); \
-    CURL_VERSION=$(apk info -v curl | head -n1 | awk '{print $1}' | cut -d- -f2-); \
+    ver() { apk list --verbose --available "$1" | head -n1 | sed -E "s/^$1-//; s/ .*//"; }; \
     apk add --no-cache \
-        git=${GIT_VERSION} \
-        gcc=${GCC_VERSION} \
-        musl-dev=${MUSL_DEV_VERSION} \
-        libffi-dev=${LIBFFI_DEV_VERSION} \
-        curl=${CURL_VERSION}; \
+        git="$(ver git)" \
+        gcc="$(ver gcc)" \
+        musl-dev="$(ver musl-dev)" \
+        libffi-dev="$(ver libffi-dev)" \
+        curl="$(ver curl)"; \
     curl --fail --show-error --location --retry 3 \
         -o /usr/local/bin/sops \
         https://github.com/mozilla/sops/releases/download/v3.9.0/sops-v3.9.0.linux.amd64 \
