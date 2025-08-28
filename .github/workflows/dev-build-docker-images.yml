@@ -33,11 +33,21 @@ on:
   push:
     branches:
       - '**'
+      - '!main'
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - 'README.md'
       - 'CHANGELOG.md'
+  pull_request:
+    types: [closed]
+    branches:
+      - 'main'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'    
 
 env:
   REGISTRY: ghcr.io
