@@ -70,7 +70,9 @@ def is_pipeline_variable(key):
         # Python system variables
         'PYTHONDONTWRITEBYTECODE', 'PYTHONUNBUFFERED', 'PYTHON_SHA256',
         # GPG and other technical variables
-        'GPG_KEY', 'GITHUB_PIPELINE_API_INPUT'
+        'GPG_KEY', 'GITHUB_PIPELINE_API_INPUT',
+        # Matrix-specific variables that should be set per environment
+        'ENV_NAMES', 'FULL_ENV', 'CLUSTER_NAME', 'ENVIRONMENT_NAME', 'ENV_NAME', 'ENV_NAME_SHORT'
     }
     
     if key in system_vars:

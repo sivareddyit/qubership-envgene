@@ -183,7 +183,7 @@ jobs:
       - name: Generate inventory
         run: |
           # Export all variables using unified exporter
-          eval "$(.github/scripts/unified_variable_exporter.sh generate_inventory ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
+          eval "$(.github/scripts/unified_variable_exporter.sh ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
           
           # All variables are now available from the unified exporter
           python3 /build_env/scripts/build_env/env_inventory_generation.py
@@ -242,7 +242,7 @@ jobs:
       - name: Credential Rotation
         run: |
           # Export all variables using unified exporter
-          eval "$(.github/scripts/unified_variable_exporter.sh credential_rotation ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
+          eval "$(.github/scripts/unified_variable_exporter.sh ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
           
           # All variables are now available from the unified exporter
           python3 /module/creds_rotation_scripts/creds_rotation_handler.py
@@ -306,7 +306,7 @@ jobs:
       - name: Build Env
         run: |
           # Export all variables using unified exporter
-          eval "$(.github/scripts/unified_variable_exporter.sh env_build ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
+          eval "$(.github/scripts/unified_variable_exporter.sh ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
           
           if [ -d "${CI_PROJECT_DIR}/configuration/certs" ]; then
           env_path=$(ls -A "${CI_PROJECT_DIR}/configuration/certs");
@@ -392,7 +392,7 @@ jobs:
       - name: Generate Effective Set
         run: |
           # Export all variables using unified exporter
-          eval "$(.github/scripts/unified_variable_exporter.sh generate_effective_set ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
+          eval "$(.github/scripts/unified_variable_exporter.sh ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
           
           # All variables are now available from the unified exporter
           echo "ENV_TEMPLATE_VERSION value: $ENV_TEMPLATE_VERSION"
@@ -467,7 +467,7 @@ jobs:
       - name: Git Commit
         run: |
           # Export all variables using unified exporter
-          eval "$(.github/scripts/unified_variable_exporter.sh git_commit ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
+          eval "$(.github/scripts/unified_variable_exporter.sh ${{ matrix.environment }} '${{ needs.show_environment_variables.outputs.variables_json }}')"
           
           # All variables are now available from the unified exporter
           echo "Prepare git_commit job for ${ENVIRONMENT_NAME}..."
