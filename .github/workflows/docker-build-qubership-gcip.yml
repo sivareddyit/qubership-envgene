@@ -3,6 +3,7 @@ name: "Dev: Build Qubership GCIP dockerimage"
 run-name: "Build Qubership GCIP for commit ${{ github.sha }}"
 
 on:
+  push:
   workflow_dispatch:
 
 env:
