@@ -7,6 +7,8 @@ import shutil
 import pytest
 from ruamel.yaml import YAML
 
+from scripts.github_actions import prepare_input_params
+
 # Local imports
 os.environ['ENVIRONMENT_NAME'] = "temporary"
 os.environ['CLUSTER_NAME'] = "temporary"
@@ -21,7 +23,14 @@ yaml = YAML()
 # Test data configuration
 TEST_CASES = [
     # (cluster_name, environment_name, test_case_name)
-    ("cluster01", "env02", "TC-001-002")
+    ("cluster01", "env02", "TC-001-002"),
+    ("cluster01", "env02", "TC-001-004"),
+    ("cluster01", "env02", "TC-001-006"),
+    ("cluster01", "env02", "TC-001-008"),
+    ("cluster01", "env02", "TC-001-010"),
+    ("cluster01", "env02", "TC-001-012"),
+    ("cluster01", "env02", "TC-001-014"),
+    ("cluster01", "env02", "TC-001-016")
 ]
 
 # Directory paths configuration
@@ -217,6 +226,7 @@ def test_sd(cluster_name, env_name, test_case_name):
 
     # Generate SD file
     logger.info("Generating SD file...")
+    prepare_input_params()
     handle_sd(env, sd_source_type, sd_version, sd_data, sd_delta, sd_merge_mode)
 
     # Compare generated SD with etalon
