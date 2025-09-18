@@ -4,7 +4,6 @@ import os
 
 # Third party imports
 import pytest
-from github_actions import prepare_input_params
 from ruamel.yaml import YAML
 
 # Local imports
@@ -224,7 +223,6 @@ def test_sd(cluster_name, env_name, test_case_name):
 
     # Generate SD file
     logger.info("Generating SD file...")
-    prepare_input_params()
     handle_sd(env, sd_source_type, sd_version, sd_data, sd_delta, sd_merge_mode)
 
     # Compare generated SD with etalon
