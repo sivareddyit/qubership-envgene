@@ -1,13 +1,11 @@
 # Standard library imports
 import difflib
 import os
-import shutil
 
 # Third party imports
 import pytest
+from github_actions import prepare_input_params
 from ruamel.yaml import YAML
-
-from scripts.github_actions import prepare_input_params
 
 # Local imports
 os.environ['ENVIRONMENT_NAME'] = "temporary"
