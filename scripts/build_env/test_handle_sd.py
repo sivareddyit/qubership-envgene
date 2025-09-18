@@ -22,7 +22,7 @@ TEST_CASES = [
     # (cluster_name, environment_name, test_case_name)
     ("cluster01", "env02", "TC-001-002"),
     ("cluster01", "env02", "TC-001-004"),
-    ("cluster01", "env02", "TC-001-006"),
+    ("cluster01", "env01", "TC-001-006"),
     ("cluster01", "env02", "TC-001-008"),
     ("cluster01", "env02", "TC-001-010"),
     ("cluster01", "env02", "TC-001-012"),
@@ -31,15 +31,15 @@ TEST_CASES = [
 ]
 
 # Directory paths configuration
-TEST_SD_DIR = getAbsPath("../../test_data/test_handle_sd")               # Directory with test SD files
+TEST_SD_DIR = getAbsPath("../../test_data/test_handle_sd")  # Directory with test SD files
 ETALON_ENV_DIR = getAbsPath("../../test_data/test_environments")  # Directory with etalon environments
-OUTPUT_DIR = getAbsPath("../../tmp/test_handle_sd")                      # Directory for test output
+OUTPUT_DIR = getAbsPath("../../tmp/test_handle_sd")  # Directory for test output
 
 
 def find_yaml_file(directory, base_name):
     logger.debug(f"Searching for YAML file:"
-                f"\n\tDirectory: {directory}"
-                f"\n\tBase name: {base_name}")
+                 f"\n\tDirectory: {directory}"
+                 f"\n\tBase name: {base_name}")
 
     for ext in ['yaml', 'yml']:
         file_path = os.path.join(directory, f"{base_name}.{ext}")
@@ -83,18 +83,18 @@ def load_test_sd_data(test_case_name):
     sd_delta = test_data.get("SD_DELTA", "")
     sd_merge_mode = test_data.get("SD_REPO_MERGE_MODE", "basic-merge")
     logger.info(f"Loaded SD parameters:"
-               f"\n\tSD_SOURCE_TYPE: {sd_source_type}"
-               f"\n\tSD_VERSION: {sd_version}"
-               f"\n\tSD_DELTA: {sd_delta}")
+                f"\n\tSD_SOURCE_TYPE: {sd_source_type}"
+                f"\n\tSD_VERSION: {sd_version}"
+                f"\n\tSD_DELTA: {sd_delta}")
 
     return sd_data, sd_source_type, sd_version, sd_delta, sd_merge_mode
 
 
 def compare_sd_files(expected_dir, actual_dir, sd_filename):
     logger.info(f"Comparing SD files:"
-               f"\n\tEtalon SD dir: {expected_dir}"
-               f"\n\tRendered test SD dir: {actual_dir}"
-               f"\n\tFilename: {sd_filename}")
+                f"\n\tEtalon SD dir: {expected_dir}"
+                f"\n\tRendered test SD dir: {actual_dir}"
+                f"\n\tFilename: {sd_filename}")
 
     # Find both files regardless of extension
     expected_file = None
@@ -160,7 +160,8 @@ def compare_sd_files(expected_dir, actual_dir, sd_filename):
 
             # Add line count info if different
             if len(expected_lines) != len(actual_lines):
-                error_msg.append(f"\n\nLine count differs: expected {len(expected_lines)}, got {len(actual_lines)} lines")
+                error_msg.append(
+                    f"\n\nLine count differs: expected {len(expected_lines)}, got {len(actual_lines)} lines")
 
             # Log the complete error message
             logger.error('\n'.join(error_msg))
@@ -176,26 +177,13 @@ def compare_sd_files(expected_dir, actual_dir, sd_filename):
 
 
 @pytest.mark.parametrize("cluster_name, env_name, test_case_name", TEST_CASES)
-
 def test_sd(cluster_name, env_name, test_case_name):
-    """
-    Test SD file generation and comparison.
-
-    Args:
-        cluster_name (str): Name of the cluster
-        env_name (str): Name of the environment
-        test_case_name (str): Name of the test case
-    """
     logger.info(f"======TEST HANDLE_SD: {test_case_name}======")
 
-    ENVIRONMENT_NAME = env_name
-    CLUSTER_NAME = cluster_name
-    CI_PROJECT_DIR = TEST_SD_DIR
-
     logger.info(f"Starting SD test:"
-               f"\n\tCluster: {cluster_name}"
-               f"\n\tEnvironment: {env_name}"
-               f"\n\tTest case: {test_case_name}")
+                f"\n\tCluster: {cluster_name}"
+                f"\n\tEnvironment: {env_name}"
+                f"\n\tTest case: {test_case_name}")
 
     # Load test data
     sd_data, sd_source_type, sd_version, sd_delta, sd_merge_mode = load_test_sd_data(test_case_name)
