@@ -66,9 +66,27 @@ def cleanup_resulting_dir(resulting_dir: pathlib.Path):
 
     for directory in dirs_to_remove:
         dir_path = resulting_dir.joinpath(directory)
+        logger.info(f"Checking path: {dir_path}")
+        logger.info(f"Absolute path: {dir_path.resolve()}")
+
+        parent = dir_path.parent
+        if parent.exists():
+            logger.debug(f"Contents of parent directory {parent}: {list(parent.iterdir())}")
+        else:
+            logger.warning(f"Parent directory {parent} does not exist!")
+
+        exists = dir_path.exists()
+        is_dir = dir_path.is_dir()
+        logger.info(f"Exists: {exists}, Is directory: {is_dir}")
+
         if check_dir_exists(dir_path):
             logger.info(f"Removing directory: {dir_path}")
             delete_dir(dir_path)
+        else:
+            logger.warning(f"Skipping {dir_path}, directory not found or not a dir")
+        # if check_dir_exists(dir_path):
+        #     logger.info(f"Removing directory: {dir_path}")
+        #     delete_dir(dir_path)
 
     for file in files_to_remove:
         file_path = resulting_dir.joinpath(file)
