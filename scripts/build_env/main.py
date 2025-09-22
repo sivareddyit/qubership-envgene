@@ -71,7 +71,7 @@ def cleanup_resulting_dir(resulting_dir: pathlib.Path):
 
         parent = dir_path.parent
         if parent.exists():
-            logger.debug(f"Contents of parent directory {parent}: {list(parent.iterdir())}")
+            logger.info(f"Contents of parent directory {parent}: {list(parent.iterdir())}")
         else:
             logger.warning(f"Parent directory {parent} does not exist!")
 
