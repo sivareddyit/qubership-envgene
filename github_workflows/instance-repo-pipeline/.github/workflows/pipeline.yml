@@ -50,6 +50,11 @@ on:
         type: string
         description: ""
         default: ""
+      ENVGENE_LOG_LEVEL:
+        required: false
+        type: string
+        description: ""
+        default: "INFO"
 
 env:
   CI_COMMIT_REF_NAME: ${{ github.ref_name }}
