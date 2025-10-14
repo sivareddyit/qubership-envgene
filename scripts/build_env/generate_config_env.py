@@ -95,6 +95,16 @@ def validate_applications(sd_config: dict):
         logger.info("Valid application: %s", app)
 
 
+def generate_ns_postfix(ns, ns_template_path) -> str:
+    deploy_postfix = ns.get("deploy_postfix")
+    if deploy_postfix:
+        ns_template_name = deploy_postfix
+    else:
+        # get base name(deploy postfix) without extensions
+        ns_template_name = Path(ns_template_path).name.replace(".yml.j2", "").replace(".yaml.j2", "")
+    return ns_template_name
+
+
 def generate_solution_structure(context: dict):
     sd_path_stem = f'{context["current_env_dir"]}/Inventory/solution-descriptor/sd'
     sd_path = next(iter(find_all_yaml_files_by_stem(sd_path_stem)), None)
@@ -106,21 +116,12 @@ def generate_solution_structure(context: dict):
             raise ValueError("Missing 'applications' key in root")
         validate_applications(context["sd_config"])
 
-        namespaces = context["current_env_template"].get("namespaces")
-        namespace_template_paths_raw = {}
-        if namespaces:
-            namespace_template_paths_raw = [ns["template_path"] for ns in namespaces]
-            context["namespace_template_paths"] = namespace_template_paths_raw
-
-        namespace_template_paths = []
-        for ns_template in namespace_template_paths_raw:
-            namespace_template_paths.append(Template(ns_template).render(context))
-        logger.info("List of found namespace template: %s", namespace_template_paths)
-
+        namespaces = context["current_env_template"].get("namespaces", [])
         postfix_template_map = {}
-        for path in namespace_template_paths:
-            postfix = os.path.basename(path).split('.')[0]  # get base name(deploy postfix) without extensions
-            postfix_template_map[postfix] = path
+        for ns in namespaces:
+            namespace_template_path = Template(ns["template_path"]).render(context)
+            postfix = generate_ns_postfix(ns, namespace_template_path)
+            postfix_template_map[postfix] = namespace_template_path
 
         solution_structure = {}
         for app in sd_config["applications"]:
@@ -204,7 +205,7 @@ def generate_namespace_file(context: dict):
     namespaces = context["current_env_template"]["namespaces"]
     for ns in namespaces:
         ns_template_path = Template(ns["template_path"]).render(context)
-        ns_template_name = Path(ns_template_path).name.replace(".yml.j2", "").replace(".yaml.j2", "")
+        ns_template_name = generate_ns_postfix(ns, ns_template_path)
         logger.info("Generate Namespace yaml for %s", ns_template_name)
         current_env_dir = context["current_env_dir"]
         ns_dir = Path(f'{current_env_dir}/Namespaces/{ns_template_name}')
