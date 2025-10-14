@@ -1,9 +1,10 @@
 import difflib
 import filecmp
-import pytest
 from os import environ
-from pathlib import Path
+
+import pytest
 from envgenehelper import *
+
 from main import render_environment, cleanup_resulting_dir
 
 test_data = [
@@ -22,6 +23,7 @@ g_templates_dir = str((base_dir / "../../test_data/test_templates").resolve())
 g_inventory_dir = str((base_dir / "../../test_data/test_environments").resolve())
 g_output_dir = str((base_dir / "../../tmp/test_environments").resolve())
 g_base_dir = get_parent_dir_for_dir(g_inventory_dir)
+environ['CI_PROJECT_DIR'] = g_base_dir
 
 
 @pytest.fixture(autouse=True)
