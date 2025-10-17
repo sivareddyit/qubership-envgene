@@ -64,7 +64,7 @@ def create_jinja_env(templates_dir: str = "") -> Environment:
 def get_inventory(context: dict) -> dict:
     inventory_path = Path(context[ContextKeys.env_instances_dir]) / "Inventory" / "env_definition.yml"
     env_definition = openYaml(filePath=inventory_path, safe_load=True)
-    logger.info("env_definition = %s", env_definition)
+    logger.info(f"env_definition = {env_definition}")
     return env_definition
 
 
@@ -73,7 +73,7 @@ def get_cloud_passport(context: dict) -> dict | None:
     if cloud_passport_file_path:
         cloud_passport_path = Path(cloud_passport_file_path)
         cloud_passport = openYaml(filePath=cloud_passport_path, safe_load=True)
-        logger.info("cloud_passport = %s", cloud_passport)
+        logger.info(f"cloud_passport = {cloud_passport}")
         return cloud_passport
 
 
@@ -81,7 +81,7 @@ def generate_config(context: dict) -> dict:
     templates_dir = Path(__file__).parent / "templates"
     template = create_jinja_env(str(templates_dir)).get_template("env_config.yml.j2")
     config = readYaml(text=template.render(context), safe_load=True)
-    logger.info("config = %s", config)
+    logger.info(f"config = {config}")
     return config
 
 
@@ -92,7 +92,7 @@ def load_env_template(context: dict):
         raise ValueError(f'Template descriptor was not found in {env_template_path_stem}')
 
     env_template = openYaml(filePath=env_template_path, safe_load=True)
-    logger.info("env_template = %s", env_template)
+    logger.info(f"env_template = {env_template}")
     return env_template
 
 
@@ -121,7 +121,7 @@ def validate_applications(sd_config: dict):
         if not isinstance(deploy_postfix, str):
             raise ValueError(f"'deployPostfix' must be string in application: {app}")
 
-        logger.info("Valid application: %s", app)
+        logger.info(f"Valid application: {app}")
 
 
 def generate_ns_postfix(ns, ns_template_path) -> str:
@@ -174,7 +174,7 @@ def generate_solution_structure(context: dict):
             }
             always_merger.merge(solution_structure, small_dict)
 
-        logger.info("Rendered solution_structure: %s", solution_structure)
+        logger.info(f"Rendered solution_structure: {solution_structure}")
         always_merger.merge(context[ContextKeys.current_env], {"solution_structure": solution_structure})
 
 
@@ -199,7 +199,7 @@ def render_from_obj_to_file(template, target_file_path, context):
 
 
 def generate_tenant_file(context: dict):
-    logger.info("Generate Tenant yaml for %s", context[ContextKeys.tenant])
+    logger.info(f"Generate Tenant yaml for {context[ContextKeys.tenant]}")
     tenant_file = f'{context[ContextKeys.current_env_dir]}/tenant.yml'
     tenant_tmpl_path = context[ContextKeys.current_env_template][ContextKeys.tenant]
     render_from_file_to_file(Template(tenant_tmpl_path).render(context), tenant_file, context)
@@ -207,7 +207,7 @@ def generate_tenant_file(context: dict):
 
 def generate_override_template(context, template_override, template_path: Path, name):
     if template_override:
-        logger.info("Generate override %s yaml for %s", template_path.stem, name)
+        logger.info(f"Generate override {template_path.stem} yaml for {name}")
         render_from_obj_to_file(template_override, template_path, context)
 
 
@@ -218,14 +218,14 @@ def generate_cloud_file(context: dict):
     cloud_file = f'{current_env_dir}/cloud.yml'
     is_template_override = isinstance(cloud_template, dict)
     if is_template_override:
-        logger.info("Generate Cloud yaml for cloud %s using cloud.template_path value", cloud)
+        logger.info(f"Generate Cloud yaml for cloud {cloud} using cloud.template_path value")
         cloud_tmpl_path = cloud_template["template_path"]
         render_from_file_to_file(Template(cloud_tmpl_path).render(context), cloud_file, context)
 
         template_override = cloud_template.get("template_override")
         generate_override_template(context, template_override, Path(f'{current_env_dir}/cloud.yml_override'), cloud)
     else:
-        logger.info("Generate Cloud yaml for cloud %s", cloud)
+        logger.info(f"Generate Cloud yaml for cloud {cloud}")
         render_from_file_to_file(Template(cloud_template).render(context), cloud_file, context)
 
 
@@ -234,8 +234,8 @@ def generate_namespace_file(context: dict):
     for ns in namespaces:
         ns_template_path = Template(ns["template_path"]).render(context)
         ns_template_name = generate_ns_postfix(ns, ns_template_path)
-        logger.info("Generate Namespace yaml for %s", ns_template_name)
-        current_env_dir = context["current_env_dir"]
+        logger.info(f"Generate Namespace yaml for {ns_template_name}")
+        current_env_dir = context[ContextKeys.current_env_dir]
         ns_dir = f'{current_env_dir}/Namespaces/{ns_template_name}'
         namespace_file = f'{ns_dir}/namespace.yml'
         render_from_file_to_file(ns_template_path, namespace_file, context)
@@ -268,7 +268,7 @@ def get_template_name(template_path: Path) -> str:
 
 
 def generate_composite_structure(composite_structure, context):
-    logger.info("Generate Composite Structure yaml for %s", composite_structure)
+    logger.info(f"Generate Composite Structure yaml for {composite_structure}")
     current_env_dir = context[ContextKeys.current_env_dir]
     cs_file = Path(current_env_dir) / "composite_structure.yml"
     cs_file.parent.mkdir(parents=True, exist_ok=True)
@@ -282,21 +282,20 @@ def generate_paramset_templates(context):
     paramset_templates = []
     for pattern in patterns:
         paramset_templates.extend(render_dir.rglob(pattern))
-    logger.info("Total parameter set templates list found: %s", paramset_templates)
+    logger.info(f"Total parameter set templates list found: {paramset_templates}")
 
     for template_path in paramset_templates:
         template_name = get_template_name(template_path)
         target_path = Path(str(template_path).replace(".yml.j2", ".yml").replace(".yaml.j2", ".yml"))
 
         try:
-            logger.info("Try to render paramset %s", template_name)
+            logger.info(f"Try to render paramset {template_name}")
             render_from_file_to_file(Template(str(template_path)).render(context), target_path, context)
-            logger.info("Successfully generated paramset: %s", template_name)
+            logger.info(f"Successfully generated paramset: {template_name}")
             if template_path.exists():
                 template_path.unlink()
         except TemplateError as e:
-            logger.warning("Skipped paramset %s - template variables not available in current environment",
-                           template_name, e)
+            logger.warning(f"Skipped paramset {template_name}. Error details: {e}")
             if target_path.exists():
                 target_path.unlink()
 
@@ -346,7 +345,7 @@ def render_app_defs(context):
             "groupId": group_id,
             "artifactId": artifact_id,
         })
-        app_def_trg_path = f"{context['current_env_dir']}/{AppDefs}/{appdef_meta.get("name")}.yml"
+        app_def_trg_path = f"{context[ContextKeys.current_env_dir]}/{AppDefs}/{appdef_meta.get("name")}.yml"
         render_from_file_to_file(def_tmpl_path, app_def_trg_path, context)
 
 
@@ -367,8 +366,11 @@ def render_reg_defs(context):
 def ensure_required_keys(context, required: list[str]):
     missing = [var for var in required if var not in context]
     if missing:
-        raise ValueError(f"Required variables: {', '.join(required)}. "f"Not found: {', '.join(missing)}")
-    logger.info("All required %s variables are defined", required)
+        raise ValueError(
+            f"Required variables: {', '.join(required)}. "
+            f"Not found: {', '.join(missing)}"
+        )
+    logger.info(f"All required {required} variables are defined")
 
 
 def ensure_valid_fields(context, fields: list[str]):
@@ -380,15 +382,18 @@ def ensure_valid_fields(context, fields: list[str]):
 
     if invalid:
         raise ValueError(
-            f"Invalid or empty fields found: {', '.join(invalid)}. "f"Required fields: {', '.join(fields)}")
+            f"Invalid or empty fields found: {', '.join(invalid)}. "
+            f"Required fields: {', '.join(fields)}"
+        )
     logger.info("All required fields are present and non-empty: %s", ", ".join(fields))
 
 
 def set_appreg_def_overrides(context):
     output_dir = Path(context[ContextKeys.output_dir])
     cluster_name = context[ContextKeys.cluster_name]
-    config_file_name_yaml = Path("configuration") / "appregdef_config.yaml"
-    config_file_name_yml = Path("configuration") / "appregdef_config.yml"
+    config_file_name = Path("configuration") / "appregdef_config"
+    config_file_name_yaml = f"{config_file_name}.yaml"
+    config_file_name_yml = f"{config_file_name}.yml"
 
     potential_config_files = [
         output_dir / cluster_name / config_file_name_yaml,
