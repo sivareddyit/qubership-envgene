@@ -3,6 +3,7 @@ import re
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from deepmerge import always_merger
 from envgenehelper import logger, openYaml, readYaml, writeYamlToFile, openFileAsString, copy_path, dumpYamlToStr, \
@@ -51,7 +52,6 @@ def ensure_required_keys(context: dict, required: list[str]):
             f"Required variables: {', '.join(required)}. "
             f"Not found: {', '.join(missing)}"
         )
-    logger.info(f"All required {required} variables are defined")
 
 
 def ensure_valid_fields(context: dict, fields: list[str]):
@@ -66,7 +66,6 @@ def ensure_valid_fields(context: dict, fields: list[str]):
             f"Invalid or empty fields found: {', '.join(invalid)}. "
             f"Required fields: {', '.join(fields)}"
         )
-    logger.info("All required fields are present and non-empty: %s", ", ".join(fields))
 
 
 def ensure_directory(path: Path, mode: int):
@@ -76,46 +75,46 @@ def ensure_directory(path: Path, mode: int):
     else:
         logger.info(f"Directory already exists: {path}")
     path.chmod(mode)
-    logger.info(f"Set permissions {oct(mode)} for {path}")
 
 
 class Context(BaseModel):
-    env: str | None = None
-    render_dir: str | None = None
-    env_vars: dict | None = None
-    cloud_passport: dict | None = None
-    templates_dir: str | None = None
-    output_dir: str | None = None
-    cluster_name: str | None = None
-    env_definition: dict | None = None
-    current_env: dict | None = None
-    current_env_dir: str | None = None
-    current_env_template: str | None = None
-    tenant: str | None = None
-    env_template: str | None = None
-    env_instances_dir: str | None = None
-    cloud_passport_file_path: str | None = None
-    sd_config: dict | None = None
-    sd_file_path: str | None = None
-    regdefs: list = Field(default_factory=list)
-    appdefs: list = Field(default_factory=list)
-    regdef_templates: list = Field(default_factory=list)
-    appdef_templates: list = Field(default_factory=list)
-    cloud: dict | None = None
-    deployer: dict | None = None
-    render_parameters_dir: str | None = None
+    env: Optional[str] = ''
+    render_dir: Optional[Path] = None
+    cloud_passport: Optional[dict] = Field(default_factory=dict)
+    templates_dir: Optional[Path] = None
+    output_dir: Optional[Path] = None
+    cluster_name: Optional[str] = ''
+    env_definition: Optional[dict] = Field(default_factory=dict)
+    current_env: Optional[dict] = Field(default_factory=dict)
+    current_env_dir: Optional[Path] = None
+    current_env_template: Optional[dict] = Field(default_factory=dict)
+    tenant: Optional[str] = ''
+    env_template: Optional[dict] = Field(default_factory=dict)
+    env_instances_dir: Optional[Path] = None
+    cloud_passport_file_path: Optional[Path] = None
+    sd_config: Optional[dict] = Field(default_factory=dict)
+    sd_file_path: Optional[Path] = None
+    regdefs: Optional[dict] = Field(default_factory=dict)
+    appdefs: Optional[dict] = Field(default_factory=dict)
+    regdef_templates: Optional[list] = Field(default_factory=list)
+    appdef_templates: Optional[list] = Field(default_factory=list)
+    cloud: Optional[str] = ''
+    deployer: Optional[str] = ''
+    render_parameters_dir: Optional[Path] = None
 
     start_time: datetime | None = Field(default=None, exclude=True)
 
     class Config:
-        extra = "forbid"
+        extra = "allow"
         validate_assignment = True
 
-    def update(self, **kwargs):
+    def update(self, data: dict | None = None, **kwargs):
+        if data:
+            for key, value in data.items():
+                setattr(self, key, value)
         for key, value in kwargs.items():
-            if key not in self.__fields__:
-                raise KeyError(f"Unknown context key: {key}")
             setattr(self, key, value)
+        logger.debug(f"Context updated: {data or kwargs}")
 
     @contextmanager
     def use(self):
@@ -124,7 +123,7 @@ class Context(BaseModel):
         try:
             yield self
         finally:
-            duration = (datetime.now() - self._start_time).total_seconds()
+            duration = (datetime.now() - self.start_time).total_seconds()
             logger.debug(f"Exit context (duration {duration:.2f}s)")
             logger.debug(f"Final state: {self.dict(exclude_none=True)}")
 
@@ -144,10 +143,9 @@ class EnvGenerator:
         self.ctx.env_definition = env_definition
 
     def set_cloud_passport(self):
-        cloud_passport_file_path = str(self.ctx.cloud_passport_file_path or "").strip()
+        cloud_passport_file_path = str(self.ctx.cloud_passport_file_path).strip()
         if cloud_passport_file_path:
-            cloud_passport_path = Path(cloud_passport_file_path)
-            cloud_passport = openYaml(filePath=cloud_passport_path, safe_load=True)
+            cloud_passport = openYaml(filePath=cloud_passport_file_path, safe_load=True)
             logger.info(f"cloud_passport = {cloud_passport}")
             self.ctx.cloud_passport = cloud_passport
 
@@ -256,10 +254,9 @@ class EnvGenerator:
         writeYamlToFile(target_file_path, readYaml(rendered))
 
     def generate_tenant_file(self):
-        tenant = self.ctx.tenant
-        logger.info(f"Generate Tenant yaml for {tenant}")
+        logger.info(f"Generate Tenant yaml for {self.ctx.tenant}")
         tenant_file = f'{self.ctx.current_env_dir}/tenant.yml'
-        tenant_tmpl_path = self.ctx.current_env_template[tenant]
+        tenant_tmpl_path = self.ctx.current_env_template["tenant"]
         self.render_from_file_to_file(Template(tenant_tmpl_path).render(self.ctx.as_dict()), tenant_file)
 
     def generate_override_template(self, template_override, template_path: Path, name):
@@ -354,8 +351,8 @@ class EnvGenerator:
                 if target_path.exists():
                     target_path.unlink()
 
-    def find_templates(self, templates_dir: str, def_type: str) -> list[Path]:
-        search_path = Path(templates_dir) / def_type
+    def find_templates(self, templates_dir: Path, def_type: str) -> list[Path]:
+        search_path = templates_dir/ def_type
         if not search_path.exists():
             logger.info(f"Directory with templates for {def_type} not found: {search_path}")
             return []
@@ -392,7 +389,7 @@ class EnvGenerator:
             self.render_from_file_to_file(def_tmpl_path, app_def_trg_path)
 
     def render_reg_defs(self):
-        for def_tmpl_path in self.ctx.regdef_templatesf:
+        for def_tmpl_path in self.ctx.regdef_templates:
             reg_def_str = openFileAsString(def_tmpl_path)
             matches = re.findall(
                 r'^\s*(name):\s*"([^"]+)"',
@@ -400,7 +397,7 @@ class EnvGenerator:
                 flags=re.MULTILINE,
             )
             regdef_meta = dict(matches)
-            self.ensure_valid_fields(regdef_meta, ["name"])
+            ensure_valid_fields(regdef_meta, ["name"])
             reg_def_trg_path = f"{self.ctx.current_env_dir}/RegDefs/{regdef_meta['name']}.yml"
             self.render_from_file_to_file(def_tmpl_path, reg_def_trg_path)
 
@@ -435,8 +432,8 @@ class EnvGenerator:
     def process_app_reg_defs(self):
         current_env_dir = self.ctx.current_env_dir
         templates_dir = self.ctx.templates_dir
-        appdef_templates = self.find_templates(templates_dir, self.ctx.appdefs)
-        regdef_templates = self.find_templates(templates_dir, self.ctx.regdefs)
+        appdef_templates = self.find_templates(templates_dir, "appdefs")
+        regdef_templates = self.find_templates(templates_dir, "regdefs")
         self.ctx.appdef_templates = appdef_templates
         self.ctx.regdef_templates = regdef_templates
 
@@ -453,9 +450,8 @@ class EnvGenerator:
                 "CI_COMMIT_TAG": all_vars.get("CI_COMMIT_TAG"),
                 "CI_COMMIT_REF_NAME": all_vars.get("CI_COMMIT_REF_NAME"),
             }
-            env_vars = ci_vars.copy()
-            env_vars.update(extra_env or {})
-            self.ctx.env_vars = env_vars
+            self.ctx.update(extra_env)
+            self.ctx.update(ci_vars)
             self.set_inventory()
             self.set_cloud_passport()
             self.generate_config()
@@ -468,7 +464,7 @@ class EnvGenerator:
             self.ctx.deployer = current_env.get('deployer', '')
             logger.info(f"current_env = {current_env}")
 
-            self.ctx.update_env_vars({
+            self.ctx.update({
                 "ND_CMDB_CONFIG_REF": all_vars.get("CI_COMMIT_SHORT_SHA", "No SHA"),
                 "ND_CMDB_CONFIG_REF_NAME": all_vars.get("CI_COMMIT_REF_NAME", "No Ref Name"),
                 "ND_CMDB_CONFIG_TAG": all_vars.get("CI_COMMIT_TAG", "No Ref tag"),
@@ -476,11 +472,11 @@ class EnvGenerator:
             })
             env_template = self.ctx.env_template
             if env_template:
-                self.ctx.update_env_vars({
+                self.ctx.update({
                     "ND_CMDB_ENV_TEMPLATE": env_template
                 })
             else:
-                self.ctx.update_env_vars({
+                self.ctx.update({
                     "ND_CMDB_ENV_TEMPLATE": self.ctx.current_env["env_template"]
                 })
 
