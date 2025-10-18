@@ -119,8 +119,8 @@ class Context(BaseModel):
 
     @contextmanager
     def use(self):
-        self._start_time = datetime.now()
-        logger.debug(f"Enter context at {self._start_time}")
+        self.start_time = datetime.now()
+        logger.debug(f"Enter context at {self.start_time}")
         try:
             yield self
         finally:
