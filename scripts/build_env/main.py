@@ -6,7 +6,7 @@ from envgenehelper.deployer import *
 from build_env import build_env, process_additional_template_parameters
 from cloud_passport import update_env_definition_with_cloud_name
 from create_credentials import create_credentials
-from generate_config_env import generate_config_env
+from generate_config_env import EnvGenerator
 from resource_profiles import get_env_specific_resource_profiles
 
 # const
@@ -180,8 +180,7 @@ def build_environment(env_name, cluster_name, templates_dir, source_env_dir, all
     envvars["cmdb_url"] = cmdb_url
     envvars["output_dir"] = output_dir
     logger.info(f"Starting rendering environment {env_name}. Input params are:\n{dump_as_yaml_format(envvars)}")
-    generate_config_env(envvars)
-
+    EnvGenerator().generate_config_env(envvars)
     handle_template_override(render_dir)
     env_specific_resource_profile_map = get_env_specific_resource_profiles(source_env_dir, all_instances_dir,
                                                                            ENV_SPECIFIC_RESOURCE_PROFILE_SCHEMA)
