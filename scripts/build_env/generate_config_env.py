@@ -79,28 +79,28 @@ def ensure_directory(path: Path, mode: int):
 
 class Context(BaseModel):
     env: Optional[str] = ''
-    render_dir: Optional[Path] = None
+    render_dir: Optional[str] = ''
     cloud_passport: Optional[dict] = Field(default_factory=dict)
     templates_dir: Optional[Path] = None
-    output_dir: Optional[Path] = None
+    output_dir: Optional[str] = ''
     cluster_name: Optional[str] = ''
     env_definition: Optional[dict] = Field(default_factory=dict)
     current_env: Optional[dict] = Field(default_factory=dict)
-    current_env_dir: Optional[Path] = None
+    current_env_dir: Optional[str] = ''
     current_env_template: Optional[dict] = Field(default_factory=dict)
     tenant: Optional[str] = ''
     env_template: Optional[dict] = Field(default_factory=dict)
-    env_instances_dir: Optional[Path] = None
-    cloud_passport_file_path: Optional[Path] = None
+    env_instances_dir: Optional[str] = ''
+    cloud_passport_file_path: Optional[str] = ''
     sd_config: Optional[dict] = Field(default_factory=dict)
-    sd_file_path: Optional[Path] = None
+    sd_file_path: Optional[str] = ''
     regdefs: Optional[dict] = Field(default_factory=dict)
     appdefs: Optional[dict] = Field(default_factory=dict)
     regdef_templates: Optional[list] = Field(default_factory=list)
     appdef_templates: Optional[list] = Field(default_factory=list)
     cloud: Optional[str] = ''
     deployer: Optional[str] = ''
-    render_parameters_dir: Optional[Path] = None
+    render_parameters_dir:  Optional[str] = ''
 
     start_time: datetime | None = Field(default=None, exclude=True)
 
@@ -143,7 +143,7 @@ class EnvGenerator:
         self.ctx.env_definition = env_definition
 
     def set_cloud_passport(self):
-        cloud_passport_file_path = str(self.ctx.cloud_passport_file_path).strip()
+        cloud_passport_file_path = self.ctx.cloud_passport_file_path.strip()
         if cloud_passport_file_path:
             cloud_passport = openYaml(filePath=cloud_passport_file_path, safe_load=True)
             logger.info(f"cloud_passport = {cloud_passport}")
