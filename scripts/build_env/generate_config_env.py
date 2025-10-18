@@ -7,74 +7,15 @@ from typing import Optional
 
 from deepmerge import always_merger
 from envgenehelper import logger, openYaml, readYaml, writeYamlToFile, openFileAsString, copy_path, dumpYamlToStr, \
-    create_yaml_processor
-from jinja2 import Environment, FileSystemLoader, Template, ChainableUndefined, TemplateError, BaseLoader
+    create_yaml_processor, find_all_yaml_files_by_stem, ensure_directory
+from jinja2 import Template, TemplateError
 from pydantic import BaseModel, Field
 
-from jinja_filters import JinjaFilters
+from envgenehelper.validation import ensure_valid_fields, ensure_required_keys
 from replace_ansible_stuff import replace_ansible_stuff
+from jinja_filters import create_jinja_env
 
 yml = create_yaml_processor()
-
-
-def create_jinja_env(templates_dir: str = "") -> Environment:
-    loader = FileSystemLoader(templates_dir) if templates_dir else BaseLoader()
-    if templates_dir:
-        env = Environment(
-            loader=loader,
-            undefined=ChainableUndefined,
-            trim_blocks=True,
-            lstrip_blocks=True,
-        )
-    else:
-        env = Environment(
-            undefined=ChainableUndefined,
-            trim_blocks=True,
-            lstrip_blocks=True,
-        )
-    JinjaFilters.register(env)
-    return env
-
-
-def find_all_yaml_files_by_stem(path: str):
-    file_paths = []
-    for ext in ["yaml", "yml"]:
-        file_path = Path(f"{path}.{ext}")
-        if file_path.exists():
-            file_paths.append(file_path)
-    return file_paths
-
-
-def ensure_required_keys(context: dict, required: list[str]):
-    missing = [var for var in required if var not in context]
-    if missing:
-        raise ValueError(
-            f"Required variables: {', '.join(required)}. "
-            f"Not found: {', '.join(missing)}"
-        )
-
-
-def ensure_valid_fields(context: dict, fields: list[str]):
-    invalid = []
-    for field in fields:
-        value = context.get(field)
-        if not value:
-            invalid.append(f"{field}={value!r}")
-
-    if invalid:
-        raise ValueError(
-            f"Invalid or empty fields found: {', '.join(invalid)}. "
-            f"Required fields: {', '.join(fields)}"
-        )
-
-
-def ensure_directory(path: Path, mode: int):
-    if not path.exists():
-        path.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Created directory: {path}")
-    else:
-        logger.info(f"Directory already exists: {path}")
-    path.chmod(mode)
 
 
 class Context(BaseModel):
@@ -100,7 +41,7 @@ class Context(BaseModel):
     appdef_templates: Optional[list] = Field(default_factory=list)
     cloud: Optional[str] = ''
     deployer: Optional[str] = ''
-    render_parameters_dir:  Optional[str] = ''
+    render_parameters_dir: Optional[str] = ''
 
     start_time: datetime | None = Field(default=None, exclude=True)
 
@@ -352,7 +293,7 @@ class EnvGenerator:
                     target_path.unlink()
 
     def find_templates(self, templates_dir: Path, def_type: str) -> list[Path]:
-        search_path = templates_dir/ def_type
+        search_path = templates_dir / def_type
         if not search_path.exists():
             logger.info(f"Directory with templates for {def_type} not found: {search_path}")
             return []
