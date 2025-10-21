@@ -51,9 +51,7 @@ def prepare_env_build_job(pipeline, is_template_test, env_template_version, full
       "envgen_image": "$envgen_image",
       "envgen_args": " -vvv",
       "envgen_debug": "true",
-      "module_ansible_dir": "/module/ansible",
       "module_inventory": "${CI_PROJECT_DIR}/configuration/inventory.yaml",
-      "module_ansible_cfg": "/module/ansible/ansible.cfg",
       "module_config_default": "/module/templates/defaults.yaml",
       "GITLAB_RUNNER_TAG_NAME" : tags
   }
@@ -90,9 +88,7 @@ def prepare_generate_effective_set_job(pipeline, environment_name, cluster_name,
     "effective_set_generator_image": "$effective_set_generator_image",
     "envgen_args": " -vv",
     "envgen_debug": "true",
-    "module_ansible_dir": "/module/ansible",
     "module_inventory": "${CI_PROJECT_DIR}/configuration/inventory.yaml",
-    "module_ansible_cfg": "/module/ansible/ansible.cfg",
     "module_config_default": "/module/templates/defaults.yaml",
     "GITLAB_RUNNER_TAG_NAME" : tags
   }
@@ -126,9 +122,7 @@ def prepare_git_commit_job(pipeline, full_env, enviroment_name, cluster_name, de
       "envgen_image": "$envgen_image",
       "envgen_args": " -vv",
       "envgen_debug": "true",
-      "module_ansible_dir": "/module/ansible",
       "module_inventory": "${CI_PROJECT_DIR}/configuration/inventory.yaml",
-      "module_ansible_cfg": "/module/ansible/ansible.cfg",
       "module_config_default": "/module/templates/defaults.yaml",
       "GIT_STRATEGY": "none",
       "COMMIT_ENV": "true",

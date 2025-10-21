@@ -33,7 +33,6 @@ COPY creds_rotation/build/requirements.txt /build/creds_rotation_requirements.tx
 
 # Copy source code
 COPY python /python
-COPY build_envgene/ansible /module/ansible
 COPY build_envgene/scripts /module/scripts
 COPY creds_rotation/scripts /module/creds_rotation_scripts
 COPY build_* create_* produce_* sort* /build_env/

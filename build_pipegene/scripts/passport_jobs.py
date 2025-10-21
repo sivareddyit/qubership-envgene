@@ -51,9 +51,7 @@ def prepare_passport_job(pipeline, full_env, enviroment_name, cluster_name, tags
     "envgen_image": "$envgen_image",
     "envgen_args": " -vv",
     "envgen_debug": "true",
-    "module_ansible_dir": "/module/ansible",
     "module_inventory": "${CI_PROJECT_DIR}/configuration/inventory.yaml",
-    "module_ansible_cfg": "/module/ansible/ansible.cfg",
     "module_config_default": "/module/templates/defaults.yaml",
     "COMMIT_ENV": "false",
     "COMMIT_MESSAGE": f"[ci_skip] update cloud passport for {cluster_name}",
@@ -87,7 +85,7 @@ def prepare_decryption_mode_job(pipeline, full_env, cluster_name,tags):
         "COMMIT_ENV": "false",
         "COMMIT_MESSAGE": f"[ci_skip] decrypt cloud passport for {cluster_name}",
         "GITLAB_RUNNER_TAG_NAME" : tags
-        
+
     }
 
     job = job_instance(params=params, vars=vars)

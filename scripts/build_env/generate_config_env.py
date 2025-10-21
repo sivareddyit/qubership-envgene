@@ -60,13 +60,10 @@ class Context(BaseModel):
     @contextmanager
     def use(self):
         self.start_time = datetime.now()
-        logger.debug(f"Enter context at {self.start_time}")
         try:
             yield self
         finally:
-            duration = (datetime.now() - self.start_time).total_seconds()
-            logger.debug(f"Exit context (duration {duration:.2f}s)")
-            logger.debug(f"Final state: {self.dict(exclude_none=True)}")
+            logger.debug(f"Final context state: {self.dict(exclude_none=True)}")
 
     def as_dict(self, include_none: bool = False) -> dict:
         return self.model_dump(exclude_none=not include_none)
