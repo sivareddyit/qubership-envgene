@@ -4,7 +4,6 @@ import re
 import shutil
 from typing import Callable
 from pathlib import Path
-import cp
 
 from .logger import logger
 
