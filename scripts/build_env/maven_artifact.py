@@ -1,12 +1,15 @@
-import logging
+import io
+import json
 import os
 import posixpath
-import io
-import traceback
 import re
-import json
+import traceback
+from typing import Optional, Dict, List
+from urllib.parse import urlparse
 
+import requests
 from ansible.module_utils.ansible_release import __version__ as ansible_version
+from pydantic import BaseModel, Field
 
 LXML_ETREE_IMP_ERR = None
 try:
@@ -34,11 +37,6 @@ try:
 except ImportError:
     SEMANTIC_VERSION_IMP_ERR = traceback.format_exc()
     HAS_SEMANTIC_VERSION = False
-
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-from ansible.module_utils.six.moves.urllib.parse import urlparse
-from ansible.module_utils.urls import fetch_url
-from ansible.module_utils.common.text.converters import to_bytes, to_native, to_text
 
 
 def split_pre_existing_dir(dirname):
@@ -70,7 +68,8 @@ def adjust_recursive_directory_permissions(pre_existing_dir, new_directory_list,
             working_dir = os.path.join(pre_existing_dir, first_sub_dir)
         directory_args['path'] = working_dir
         changed = module.set_fs_attributes_if_different(directory_args, changed)
-        changed = adjust_recursive_directory_permissions(working_dir, new_directory_list, module, directory_args, changed)
+        changed = adjust_recursive_directory_permissions(working_dir, new_directory_list, module, directory_args,
+                                                         changed)
     return changed
 
 
@@ -226,8 +225,10 @@ class MavenDownloader:
             parsed_url = urlparse(url)
             bucket_name = parsed_url.netloc
             key_name = parsed_url.path[1:]
-            client = boto3.client('s3', aws_access_key_id=self.module.params.get('username', ''), aws_secret_access_key=self.module.params.get('password', ''))
-            url_to_use = client.generate_presigned_url('get_object', Params={'Bucket': bucket_name, 'Key': key_name}, ExpiresIn=10)
+            client = boto3.client('s3', aws_access_key_id=self.module.params.get('username', ''),
+                                  aws_secret_access_key=self.module.params.get('password', ''))
+            url_to_use = client.generate_presigned_url('get_object', Params={'Bucket': bucket_name, 'Key': key_name},
+                                                       ExpiresIn=10)
 
         req_timeout = self.module.params.get('timeout')
 
@@ -240,7 +241,7 @@ class MavenDownloader:
         if self.module.params['unredirected_headers']:
             kwargs['unredirected_headers'] = self.module.params['unredirected_headers']
 
-        response, info = fetch_url(
+        response, info = requests.get(
             self.module,
             url_to_use,
             timeout=req_timeout,
@@ -258,34 +259,6 @@ class MavenDownloader:
             )
         return None
 
-def main():
-    module = AnsibleModule(
-        argument_spec=dict(
-            discovery_repository=dict(default=None),
-            artifact_definition=dict(default=None),
-            group_id=dict(required=False),
-            artifact_id=dict(required=False),
-            version=dict(default=None),
-            version_by_spec=dict(default=None),
-            classifier=dict(default=''),
-            extension=dict(default='jar'),
-            repository_url=dict(default='https://repo1.maven.org/maven2'),
-            username=dict(default=None, aliases=['aws_secret_key']),
-            password=dict(default=None, no_log=True, aliases=['aws_secret_access_key']),
-            headers=dict(type='dict'),
-            state=dict(default="present", choices=["present", "absent"]),  # TODO - Implement a "latest" state
-            timeout=dict(default=10, type='int'),
-            dest=dict(type="path", required=False),
-            unredirected_headers=dict(type='list', elements='str', required=False),
-        ),
-        add_file_common_args=True,
-        mutually_exclusive=([('version', 'version_by_spec')])
-    )
-
-    if module.params["discovery_repository"] is not None:
-        discovery_repository(module)
-    else:
-        download_artifact(module)
 
 def convert_nexus_repo_url_to_index_view(url: str) -> str:
     has_trailing_slash = url.endswith("/")
@@ -300,6 +273,7 @@ def convert_nexus_repo_url_to_index_view(url: str) -> str:
     if has_trailing_slash:
         new_url += "/"
     return new_url
+
 
 def discovery_repository(module):
     artifact_definition = module.params["artifact_definition"]
@@ -328,17 +302,18 @@ def discovery_repository(module):
         version_dd = try_to_download_artifact(repository_url[0], artifact_definition, module)
         if isinstance(version_dd, str):
             discovered_repo_url = repository_domain + repository_url[1]
-            module.exit_json(repository_url=discovered_repo_url, version_dd=version_dd, changed=True)
-            return
+            return {"repository_url": discovered_repo_url, "version_dd": version_dd, "changed": True}
         errors.append(str(version_dd))
 
-    module.fail_json(msg="artifact not found", errors=errors)
+    if errors:
+        raise ValueError(f"artifact not found: {errors}")
+
 
 def try_to_download_artifact(repository_url, artifact_definition, module):
     group_id = artifact_definition["groupId"]
     artifact_id = artifact_definition["artifactId"]
 
-    version = module.params["version"]
+    version = params["version"]
     headers = module.params['headers']
     version_by_spec = module.params["version_by_spec"]
     classifier = module.params["classifier"]
@@ -354,6 +329,7 @@ def try_to_download_artifact(repository_url, artifact_definition, module):
         return downloader.find_uri_for_artifact(artifact, suppress_errors=False)
     except ValueError as e:
         return e
+
 
 def download_artifact(module):
     repository_url = module.params["repository_url"]
@@ -386,11 +362,40 @@ def download_artifact(module):
     changed = False
     version_dd = downloader.find_uri_for_artifact(artifact)
     if changed:
-        module.exit_json(state=state, dest=dest, group_id=group_id, artifact_id=artifact_id, version=version, classifier=classifier,
+        module.exit_json(state=state, dest=dest, group_id=group_id, artifact_id=artifact_id, version=version,
+                         classifier=classifier,
                          extension=extension, repository_url=repository_url, changed=changed)
     else:
         module.exit_json(state=state, dest=dest, version_dd=version_dd, changed=changed)
 
 
-if __name__ == '__main__':
-    main()
+class MavenRepoConfig(BaseModel):
+    repository_url: str = "https://repo1.maven.org/maven2"
+    username: Optional[str] = None
+    password: Optional[str] = None
+    headers: Dict[str, str] = Field(default_factory=dict)
+    timeout: int = 10
+    unredirected_headers: List[str] = Field(default_factory=list)
+
+class MavenArtifactSpec(BaseModel):
+    group_id: Optional[str] = None
+    artifact_id: Optional[str] = None
+    version: Optional[str] = None
+    version_by_spec: Optional[str] = None
+    classifier: str = ""
+    extension: str = "jar"
+    state: str = "present"
+    dest: Optional[str] = None
+
+class MavenParams(BaseModel):
+    discovery_repository: Optional[str] = None
+    artifact_definition: Optional[Dict] = None
+    repo_config: MavenRepoConfig = Field(default_factory=MavenRepoConfig)
+    artifact_spec: MavenArtifactSpec = Field(default_factory=MavenArtifactSpec)
+
+def maven_discovery(params):
+
+    if params["discovery_repository"] is not None:
+        return discovery_repository(params)
+    else:
+        return download_artifact(params)

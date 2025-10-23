@@ -7,7 +7,7 @@ from typing import Optional
 
 from deepmerge import always_merger
 from envgenehelper import logger, openYaml, readYaml, writeYamlToFile, openFileAsString, copy_path, dumpYamlToStr, \
-    create_yaml_processor, find_all_yaml_files_by_stem, ensure_directory
+    create_yaml_processor, find_all_yaml_files_by_stem, ensure_directory, decrypt_file
 from jinja2 import Template, TemplateError
 from pydantic import BaseModel, Field
 
@@ -42,6 +42,8 @@ class Context(BaseModel):
     cloud: Optional[str] = ''
     deployer: Optional[str] = ''
     render_parameters_dir: Optional[str] = ''
+    cred_config: Optional[dict] = Field(default_factory=dict)
+    base_dir: Optional[str] = ''
 
     start_time: datetime | None = Field(default=None, exclude=True)
 
@@ -436,3 +438,64 @@ class EnvGenerator:
             ensure_required_keys(self.ctx.as_dict(),
                                  required=["templates_dir", "env_instances_dir", "cluster_name", "current_env_dir"])
             self.process_app_reg_defs()
+
+    def generate_credentials(self):
+        base_dir = os.getenv("CI_PROJECT_DIR")
+        self.ctx.base_dir = base_dir
+        cred_config_path = f"{base_dir}/configuration/credentials/credentials.yml"
+        instance_secret_key = os.getenv("SECRET_KEY")
+
+        decrypted_creds = decrypt_file(cred_config_path, secret_key=instance_secret_key, in_place=False)
+        rendered_creds = create_jinja_env().from_string(decrypted_creds).render(self.ctx.as_dict())
+        cred_config = readYaml(text=rendered_creds, safe_load=True)
+        self.ctx.cred_config = cred_config
+
+    def df(self):
+        env_template = self.ctx.env_definition["envTemplate"]
+        artifact = env_template.get("artifact")
+        if artifact is None:
+            run_old_logic()
+        else:
+            appver = artifact.split(":")
+            config_base = Path(self.ctx.base_dir) / "configuration" / "artifact_definitions" / appver[0]
+
+            if (config_base.with_suffix(".yaml")).exists():
+                config_file_path = config_base.with_suffix(".yaml")
+            else:
+                config_file_path = config_base.with_suffix(".yml")
+            configs = openYaml(filePath=config_file_path)
+            self.ctx.configs = configs
+
+            cred_id = configs["registry"]["credentialsId"]
+            creds = self.ctx.cred_config[cred_id]["data"]
+
+            if not creds.get("username") or not creds.get("password"):
+                raise ValueError(
+                    f"username or password for registry '{configs['registry']['name']}' is null. "
+                    f"Fix credentials in {cred_id} inside credentials.yml"
+                )
+            repository_username = creds["username"]
+            repository_password = creds["password"]
+
+            discovery = MavenDiscovery()
+            repo_url, version = discovery.find_repository_and_version(artifact_definition)
+            discovery_output = maven_discovery(
+                configs=configs,
+                version=template_split[1],
+                username=repository_username,
+                password=repository_password
+            )
+
+            # 7) set final facts
+            self.ctx.group_id = configs["groupId"]
+            self.ctx.artifact_id = configs["artifactId"]
+            self.ctx.version = template_split[1]
+            self.ctx.repository_url = discovery_output.get(
+                "repository_url",
+                configs["registry"]["mavenConfig"]["repositoryDomainName"]
+            )
+
+    def generate_template(self, envvars: dict):
+        with self.ctx.use():
+            self.generate_credentials()
+            self.set_inventory()
