@@ -137,6 +137,7 @@ class EnvGenerator:
     def generate_solution_structure(self):
         sd_path_stem = f'{self.ctx.current_env_dir}/Inventory/solution-descriptor/sd'
         sd_path = next(iter(find_all_yaml_files_by_stem(sd_path_stem)), None)
+        solution_structure = {}
         if sd_path:
             self.ctx.sd_file_path = str(sd_path)
             sd_config = openYaml(filePath=sd_path, safe_load=True)
@@ -152,7 +153,6 @@ class EnvGenerator:
                 postfix = self.generate_ns_postfix(ns, namespace_template_path)
                 postfix_template_map[postfix] = namespace_template_path
 
-            solution_structure = {}
             for app in sd_config["applications"]:
                 app_version = app["version"]
                 app_name, version = app_version.split(":", 1)
@@ -174,8 +174,8 @@ class EnvGenerator:
                 }
                 always_merger.merge(solution_structure, small_dict)
 
-            logger.info(f"Rendered solution_structure: {solution_structure}")
             always_merger.merge(self.ctx.current_env, {"solution_structure": solution_structure})
+        logger.info(f"Rendered solution_structure: {solution_structure}")
 
     def render_from_file_to_file(self, src_template_path: str, target_file_path: str):
         template = openFileAsString(src_template_path)
@@ -385,6 +385,7 @@ class EnvGenerator:
         self.render_reg_defs()
 
     def generate_config_env(self, extra_env: dict):
+        logger.info("Start of rendering templates for environment generation")
         with self.ctx.use():
             all_vars = dict(os.environ)
             ci_vars = {
@@ -439,3 +440,4 @@ class EnvGenerator:
             ensure_required_keys(self.ctx.as_dict(),
                                  required=["templates_dir", "env_instances_dir", "cluster_name", "current_env_dir"])
             self.process_app_reg_defs()
+            logger.info("Rendering of templates for environment generation was successful")
