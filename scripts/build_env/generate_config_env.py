@@ -7,13 +7,13 @@ from typing import Optional
 
 from deepmerge import always_merger
 from envgenehelper import logger, openYaml, readYaml, writeYamlToFile, openFileAsString, copy_path, dumpYamlToStr, \
-    create_yaml_processor, find_all_yaml_files_by_stem, ensure_directory
+    create_yaml_processor, find_all_yaml_files_by_stem, ensure_directory, dump_as_yaml_format
+from envgenehelper.validation import ensure_valid_fields, ensure_required_keys
 from jinja2 import Template, TemplateError
 from pydantic import BaseModel, Field
 
-from envgenehelper.validation import ensure_valid_fields, ensure_required_keys
+from jinja import create_jinja_env
 from replace_ansible_stuff import replace_ansible_stuff
-from jinja_filters import create_jinja_env
 
 yml = create_yaml_processor()
 
@@ -384,8 +384,8 @@ class EnvGenerator:
         self.render_app_defs()
         self.render_reg_defs()
 
-    def generate_config_env(self, extra_env: dict):
-        logger.info("Start of rendering templates for environment generation")
+    def generate_config_env(self, env_name: str, extra_env: dict):
+        logger.info(f"Starting rendering environment {env_name}. Input params are:\n{dump_as_yaml_format(extra_env)}")
         with self.ctx.use():
             all_vars = dict(os.environ)
             ci_vars = {
