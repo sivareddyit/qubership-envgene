@@ -1,7 +1,7 @@
 import re
 from envgenehelper import logger
 
-from jinja import JINJA_FILTERS
+from scripts.build_env.jinja.jinja import JINJA_FILTERS
 
 general_warn_message = (
     "All Ansible built-in filters (ansible.builtin.*) in this template need to be removed/replaced. "
@@ -11,6 +11,12 @@ general_warn_message = (
 
 incorrect_template_warn_message = (
     "Invalid template: Template was automatically fixed."
+)
+
+leading_underscore_warn_message = (
+    "Template contained variables with leading underscores (_var). "
+    "Underscore prefix was automatically removed. "
+    "Leading underscores don't make sense in python-based templates, unlike ansible before"
 )
 
 REPLACEMENTS = [
@@ -33,6 +39,13 @@ REPLACEMENTS = [
         r"| default(\1\2\1, true)",
         "jinja2 default without true",
         incorrect_template_warn_message
+    ),
+    # {{ _var }} -> {{ var }}
+    (
+        re.compile(r"(?<=\b)_([a-zA-Z_][a-zA-Z0-9_]*)"),
+        r"\1",
+        "Jinja variable with leading underscore",
+        leading_underscore_warn_message,
     ),
 ]
 

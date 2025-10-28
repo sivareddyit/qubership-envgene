@@ -12,8 +12,8 @@ from envgenehelper.validation import ensure_valid_fields, ensure_required_keys
 from jinja2 import Template, TemplateError
 from pydantic import BaseModel, Field
 
-from jinja import create_jinja_env
-from replace_ansible_stuff import replace_ansible_stuff
+from scripts.build_env.jinja.jinja import create_jinja_env
+from scripts.build_env.jinja.replace_ansible_stuff import replace_ansible_stuff
 
 yml = create_yaml_processor()
 
