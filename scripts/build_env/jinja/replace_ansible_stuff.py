@@ -70,6 +70,12 @@ def replace_ansible_stuff(template_str: str, template_path: str = "") -> str:
                     match.string,
                     message,
                 )
+            logger.info(
+                "Pattern: %s | Match: %r -> Replacement: %r",
+                name,
+                match.group(0),
+                pattern.sub(replacement, match.group(0)),
+            )
         template_str = pattern.sub(replacement, template_str)
 
     return template_str
