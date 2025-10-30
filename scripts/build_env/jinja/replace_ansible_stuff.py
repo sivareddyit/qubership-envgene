@@ -13,12 +13,6 @@ incorrect_template_warn_message = (
     "Invalid template: Template was automatically fixed."
 )
 
-leading_underscore_warn_message = (
-    "Template contained variables with leading underscores (_var). "
-    "Underscore prefix was automatically removed. "
-    "Leading underscores don't make sense in python-based templates, unlike ansible before"
-)
-
 REPLACEMENTS = [
     # ansible.builtin.to_nice_yaml -> to_nice_yaml
     (
@@ -40,13 +34,6 @@ REPLACEMENTS = [
         "jinja2 default without true",
         incorrect_template_warn_message
     ),
-    # {{ _var }} -> {{ var }}
-    (
-        re.compile(r"(?<=\b)_([a-zA-Z_][a-zA-Z0-9_]*)"),
-        r"\1",
-        "Jinja variable with leading underscore",
-        leading_underscore_warn_message,
-    ),
 ]
 
 
@@ -58,20 +45,20 @@ def replace_ansible_stuff(template_str: str, template_path: str = "") -> str:
         for match in pattern.finditer(template_str):
             if template_path:
                 logger.warning(
-                    "Replaced %s in template '%s'. %s",
+                    "[JINJA] Replaced %s in template '%s'. %s",
                     name,
                     template_path,
                     message,
                 )
             else:
                 logger.warning(
-                    "Replaced %s in template: %r. %s",
+                    "[JINJA] Replaced %s in template: %r. %s",
                     name,
                     match.string,
                     message,
                 )
-            logger.info(
-                "Pattern: %s | Match: %r -> Replacement: %r",
+            logger.warning(
+                "[JINJA] Pattern: %s | Match: %r -> Replacement: %r",
                 name,
                 match.group(0),
                 pattern.sub(replacement, match.group(0)),
