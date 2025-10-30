@@ -181,7 +181,7 @@ class EnvGenerator:
         template = openFileAsString(src_template_path)
         template = replace_ansible_stuff(template_str=template, template_path=src_template_path)
         rendered = create_jinja_env().from_string(template).render(self.ctx.as_dict())
-        logger.debug(f"Rendered {rendered}")
+        logger.info(f"Rendered {rendered}")
         writeYamlToFile(target_file_path, readYaml(rendered))
 
     def render_from_file_to_obj(self, src_template_path) -> dict:
