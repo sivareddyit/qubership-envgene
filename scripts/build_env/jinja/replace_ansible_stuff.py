@@ -1,6 +1,5 @@
 import re
 from envgenehelper import logger
-
 from jinja.jinja import JINJA_FILTERS
 
 general_warn_message = (
@@ -11,6 +10,11 @@ general_warn_message = (
 
 incorrect_template_warn_message = (
     "Invalid template: Template was automatically fixed."
+)
+
+underscore_var_warn_message = (
+    "Local variables with leading underscores (like {{ _tenant }}) are no longer supported. "
+    "Use the main variable name instead (e.g. {{ tenant }})."
 )
 
 REPLACEMENTS = [
@@ -28,11 +32,19 @@ REPLACEMENTS = [
         "ansible.builtin.env lookup",
         general_warn_message
     ),
+    # | default('x') -> | default('x', true)
     (
         re.compile(r"\|\s*default\((['\"])(.+?)\1\s*\)"),
         r"| default(\1\2\1, true)",
         "jinja2 default without true",
         incorrect_template_warn_message
+    ),
+    # {{ _tenant }} -> {{ tenant }}
+    (
+        re.compile(r"{{\s*_(\w+)\s*}}"),
+        r"{{ \1 }}",
+        "jinja2 underscore variable",
+        underscore_var_warn_message
     ),
 ]
 
@@ -41,6 +53,7 @@ def replace_ansible_stuff(template_str: str, template_path: str = "") -> str:
     template_str = template_str.lstrip()
     if template_str.startswith('---'):
         template_str = template_str.split('\n', 1)[1]
+
     for pattern, replacement, name, message in REPLACEMENTS:
         for match in pattern.finditer(template_str):
             if template_path:
