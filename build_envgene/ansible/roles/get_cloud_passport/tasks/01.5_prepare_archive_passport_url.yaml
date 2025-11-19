@@ -1,30 +1,5 @@
----
-- name: self_token credid
-  debug:
-    var: "{{ cred_config[self_token[0]]['data'][self_token[1]] }}"
-
 - name: Prepare link to download archive
   block:
-    - name: Get pipeline jobs
-      uri:
-        url: "{{ url_pipe_bridges }}"
-        validate_certs: no
-        method: GET
-        headers:
-          PRIVATE-TOKEN: "{{ cred_config[self_token[0]]['data'][self_token[1]] }}"
-      delegate_to: localhost
-      register: pipeline_jobs
-
-    - name: set downstream pipelines attributes
-      set_fact:
-        downstream_project_id: "{{ item.downstream_pipeline.project_id }}"
-        downstream_pipe_id: "{{ item.downstream_pipeline.id }}"
-        downstream_project_ref: "{{ item.downstream_pipeline.ref }}"
-      with_items:
-        - "{{ pipeline_jobs.json }}"
-      when:
-        - "(item.name == discovery_job_name) or (item.name == auto_discovery_job_name)"
-
     - name: Get pipeline downstream jobs
       uri:
         url: "{{ url_pipe_jobs }}"

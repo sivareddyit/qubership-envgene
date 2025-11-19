@@ -1,6 +1,7 @@
 import base64
 import re
 
+import requests
 from cryptography.fernet import Fernet
 from envgenehelper import logger
 import os
@@ -22,9 +23,6 @@ passport_path = f"{base_dir}/configuration/group_vars/{env_name}"
 
 # gitlab ci/cd variable for encrypt/decrypt sensitive data
 instance_secret_key = os.getenv("SECRET_KEY")
-
-discovery_job_name = "trigger_discovery_passport"
-auto_discovery_job_name = f"trigger-discovery-passport.{env_name.replace('_', '-')}-trigger"
 
 cred_config_path = Path(f"{base_dir}/configuration/credentials/credentials.yml")
 integration_config_path = Path(f"{base_dir}/configuration/integration.yml")
@@ -89,14 +87,15 @@ cred_config = openYaml(cred_config_path)
 self_token = cred_id(integration_config.get("self_token"))
 gitlab_token = cred_id(integration_config['cp_discovery']['gitlab']['token'])
 
-
 ci_project_dir = os.getenv("CI_PROJECT_DIR")
 ci_commit_ref = os.getenv("CI_COMMIT_REF_NAME")
 git_user_email = os.getenv("GITLAB_USER_EMAIL")
 git_user_name = os.getenv("GITLAB_USER_LOGIN")
 ci_server_host = os.getenv("CI_SERVER_HOST")
 ci_project_path = os.getenv("CI_PROJECT_PATH")
+
 git_token = cred_config[self_token[0]]['data'][self_token[1]]
+# logger.info(f"self_token cred_id = {git_token}")
 
 manager = GitRepoManager(
     repo_path=ci_project_dir,
@@ -109,3 +108,35 @@ manager = GitRepoManager(
 )
 
 manager.prepare_repo()
+headers = {
+    "PRIVATE-TOKEN": git_token
+}
+
+try:
+    response = requests.get(url_pipe_bridges, headers=headers, verify=False)
+    response.raise_for_status()
+    pipeline_jobs = response.json()
+except requests.RequestException as e:
+    raise RuntimeError(f"Failed to get pipeline jobs from {url_pipe_bridges}: {e}")
+
+logger.info(f"pipeline_jobs = {pipeline_jobs}")
+
+downstream_project_id = None
+downstream_pipe_id = None
+downstream_project_ref = None
+
+for item in pipeline_jobs:
+    job_name = item.get("name", "")
+    if (
+        job_name == "trigger_discovery_passport" or
+        job_name == f"trigger-discovery-passport.{env_name.replace('_', '-')}-trigger"
+    ):
+        downstream_pipeline = item.get("downstream_pipeline", {})
+        downstream_project_id = downstream_pipeline.get("project_id")
+        downstream_pipe_id = downstream_pipeline.get("id")
+        downstream_project_ref = downstream_pipeline.get("ref")
+        break
+
+logger.info("Downstream project ID:", downstream_project_id)
+logger.info("Downstream pipeline ID:", downstream_pipe_id)
+logger.info("Downstream ref:", downstream_project_ref)

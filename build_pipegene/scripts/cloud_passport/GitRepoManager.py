@@ -35,7 +35,7 @@ class GitRepoManager:
         try:
             origin.pull(self.branch)
         except GitCommandError as e:
-            raise RuntimeError()
+            raise RuntimeError(f"Failed to pull branch '{self.branch}' from remote 'origin': {e}")
 
 
 
