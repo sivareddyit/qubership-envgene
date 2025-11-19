@@ -1,25 +1,3 @@
----
-- name: set integration data
-  integration_vars:
-    var: "{{ integration_data }}"
-
-- name: decrypt {{ cred_config_path }} with instance secret-key
-  crypt:
-    crypt_type: "decrypt"
-    source_file: "{{ cred_config_path }}"
-    in_place: true
-  register: decrypt_creds
-  no_log: true
-
-- name: Include vars from credentials file
-  ansible.builtin.include_vars:
-    file:  "{{ cred_config_path }}"
-    name: cred_config
-
-- name: credid integration data
-  set_fact:
-    self_token:    "{{ self_token | credid }}"
-    gitlab_token: "{{ cp_discovery.gitlab.token | credid }}"
 
 - name: Prepare repository  (git pull)
   shell: |
