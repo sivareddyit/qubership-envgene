@@ -2,6 +2,8 @@ from pathlib import Path
 
 from git import Repo, GitCommandError
 
+from python.envgene.envgenehelper.http_helper import ApiClient
+
 
 class GitRepoManager:
     def __init__(self, repo_path, git_user_email, git_user_name, git_token, server_host, project_path, branch):
@@ -38,4 +40,20 @@ class GitRepoManager:
             raise RuntimeError(f"Failed to pull branch '{self.branch}' from remote 'origin': {e}")
 
 
+class GitLabClient:
+    def __init__(self, token: str, api_url: str):
+        self.token = token
+        self.api_url = api_url.rstrip("/")
+        self.http = ApiClient()
 
+    @property
+    def headers(self):
+        return {"PRIVATE-TOKEN": self.token}
+
+    def get_pipeline_bridges(self, project_id, pipeline_id):
+        url = f"{self.api_url}/projects/{project_id}/pipelines/{pipeline_id}/bridges"
+        return self.http.get_json(url, headers=self.headers)
+
+    def get_pipeline_jobs(self, project_id, pipeline_id):
+        url = f"{self.api_url}/projects/{project_id}/pipelines/{pipeline_id}/jobs"
+        return self.http.get_json(url, headers=self.headers)
