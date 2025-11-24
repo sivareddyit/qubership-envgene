@@ -1,4 +1,5 @@
 import requests
+from pathlib import Path
 
 from python.envgene.envgenehelper.errors import IntegrationError
 
@@ -21,3 +22,28 @@ class ApiClient:
 
         except requests.RequestException as e:
             raise IntegrationError(f"GET request failed for URL: {url}. Error: {e}")
+
+    def download_file(self, url: str, dest: str, headers: dict = None,
+                      chunk_size: int = 8192, timeout: int = 60):
+        try:
+            headers = headers or {}
+            Path(dest).parent.mkdir(parents=True, exist_ok=True)
+
+            with requests.get(
+                url,
+                headers=headers,
+                stream=True,
+                verify=self.verify_ssl,
+                timeout=timeout,
+            ) as r:
+                r.raise_for_status()
+
+                with open(dest, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=chunk_size):
+                        if chunk:
+                            f.write(chunk)
+
+            return dest
+
+        except requests.RequestException as e:
+            raise IntegrationError(f"File download failed for URL: {url}. Error: {e}")

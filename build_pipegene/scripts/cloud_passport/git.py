@@ -2,7 +2,7 @@ from pathlib import Path
 
 from git import Repo, GitCommandError
 
-from python.envgene.envgenehelper.http_helper import ApiClient
+from python.envgene.envgenehelper.http_helper import ApiClient, download_file
 
 
 class GitRepoManager:
@@ -56,4 +56,12 @@ class GitLabClient:
 
     def get_pipeline_jobs(self, project_id, pipeline_id):
         url = f"{self.api_url}/projects/{project_id}/pipelines/{pipeline_id}/jobs"
+        return self.http.get_json(url, headers=self.headers)
+
+    def download_job_artifacts(self, project_id, job_id, dest_artifacts_path):
+        url = f"{self.api_url}/projects/{project_id}/jobs/{job_id}/artifacts"
+        self.http.download_file(url, dest_artifacts_path, headers=self.headers)
+
+    def get_project_variables(self, project_id):
+        url = f"{self.api_url}/projects/{project_id}/variables"
         return self.http.get_json(url, headers=self.headers)

@@ -1,14 +1,17 @@
 import base64
 import os
 import re
+import shutil
 from pathlib import Path
 
 from cryptography.fernet import Fernet
 from envgenehelper import logger
 
+from build_pipegene.scripts.cloud_passport.cmdb import process_credentials
 from build_pipegene.scripts.cloud_passport.git import GitLabClient, GitRepoManager
-from python.envgene.envgenehelper import openYaml
+from python.envgene.envgenehelper import openYaml, unpack_archive, cleanup_dir
 from python.envgene.envgenehelper.errors import ValidationError
+from python.envgene.envgenehelper.http_helper import ApiClient, download_file
 
 
 def get_integration_config(integration_config_path) -> dict:
@@ -61,6 +64,51 @@ def get_cred_config(cred_config_path: Path):
     return openYaml(cred_config_path)
 
 
+def process_sensitive_files(discovery_files, cloud_passport_dir, cloud_name):
+    sensitive_file = cloud_passport_dir / f"{cloud_name}-creds.yml"
+    old_sensitive_file = cloud_passport_dir / f"{cloud_name}-old-creds.yml"
+
+    if sensitive_file.exists():
+        old_sensitive_file_content = sensitive_file.read_text()
+    else:
+        old_sensitive_file_content = ""
+
+    for f in discovery_files:
+        if "sensitive" in f.name:
+            process_credentials(f)
+            shutil.copyfile(f, sensitive_file)
+    old_sensitive_file.write_text(old_sensitive_file_content)
+
+
+def process_passport_files(discovery_files, cloud_passport_dir, cloud_name):
+    cloud_passport = cloud_passport_dir / f"{cloud_name}.yml"
+    pattern = re.compile(r"(.*)secrets(.*)(}})")
+    for f in discovery_files:
+        if "passport" in f.name:
+            content = f.read_text()
+            replaced = pattern.sub(r"\1\2 | secrets \3", content)
+            f.write_text(replaced)
+            shutil.copyfile(f, cloud_passport)
+            break
+
+
+def process_discovery_files(env_name: str,
+                            envs_directory_path: str,
+                            dest_unpack_files: str):
+    envs_directory_path = Path(envs_directory_path)
+    dest_unpack_files = Path(dest_unpack_files)
+
+    env_paths = env_name.split("/")
+    cloud_name = env_paths[0]
+    cloud_dir = envs_directory_path / cloud_name
+    cloud_passport_dir = cloud_dir / "cloud-passport"
+
+    cleanup_dir(cloud_passport_dir)
+    discovery_files = list(dest_unpack_files.rglob("*"))
+    process_sensitive_files(discovery_files, cloud_passport_dir, cloud_name)
+    process_passport_files(discovery_files, cloud_passport_dir, cloud_name)
+
+
 def main():
     base_dir = os.getenv("CI_PROJECT_DIR")
 
@@ -97,6 +145,15 @@ def main():
     if not downstream:
         raise ValidationError("Downstream pipeline not found")
     logger.info(f"Downstream: {downstream}")
+
+    downstream_project_id = downstream.get("project_id")
+    dest_archive_path = "/tmp/archive.zip"
+    gl.download_job_artifacts(downstream_project_id, downstream.get("pipeline_id"), dest_archive_path)
+    dest_unpack_files = "/tmp/passport"
+    unpack_archive(dest_archive_path, os.path.dirname(dest_unpack_files))
+
+    process_discovery_files(env_name, f"{base_dir}/environments", dest_unpack_files)
+    gitlab_vars_api = gl.get_project_variables(downstream_project_id)
 
 
 if __name__ == "__main__":
