@@ -9,9 +9,10 @@ from envgenehelper import logger
 
 from build_pipegene.scripts.cloud_passport.cmdb import process_credentials
 from build_pipegene.scripts.cloud_passport.git import GitLabClient, GitRepoManager
-from python.envgene.envgenehelper import openYaml, unpack_archive, cleanup_dir
+from python.envgene.envgenehelper import openYaml, unpack_archive, cleanup_dir, yaml, addHeaderToYaml
 from python.envgene.envgenehelper.errors import ValidationError
-from python.envgene.envgenehelper.http_helper import ApiClient, download_file
+
+secret_key_var_name = "SECRET_KEY"
 
 
 def get_integration_config(integration_config_path) -> dict:
@@ -54,30 +55,59 @@ def cred_id(val):
         raise ValueError(f"Value '{val}' does not match expected format")
 
 
-def get_cred_config(cred_config_path: Path):
-    if not cred_config_path.exists():
-        raise FileNotFoundError(f"{cred_config_path} not found")
-    key_bytes = base64.urlsafe_b64decode(os.getenv("SECRET_KEY"))
-    encrypted_data = cred_config_path.read_bytes()
-    decrypted_data = Fernet(key_bytes).decrypt(encrypted_data)
-    cred_config_path.write_bytes(decrypted_data)
-    return openYaml(cred_config_path)
+def reencrypt_sensitive_file(sensitive_file: Path, old_sensitive_file: Path, secret_key: str):
+    if sensitive_file.exists():
+        old_sensitive_file.write_bytes(sensitive_file.read_bytes())
+
+    process_encrypted_file(
+        file_path=sensitive_file,
+        secret_key=secret_key,
+        decrypt=False,
+        in_place=True
+    )
+    if old_sensitive_file.exists():
+        old_sensitive_file.unlink()
 
 
-def process_sensitive_files(discovery_files, cloud_passport_dir, cloud_name):
+def process_encrypted_file(
+        file_path: str | Path,
+        secret_key: str = os.getenv(secret_key_var_name),
+        decrypt: bool = True,
+        in_place: bool = True
+):
+    file_path = Path(file_path)
+    if isinstance(secret_key, str):
+        secret_key = secret_key.encode()
+    fernet = Fernet(secret_key)
+    content = file_path.read_bytes()
+    if decrypt:
+        processed = fernet.decrypt(content)
+    else:
+        processed = fernet.encrypt(content)
+    if in_place:
+        file_path.write_bytes(processed)
+    else:
+        output_path = file_path.parent / f"{'decrypted' if decrypt else 'encrypted'}_{file_path.name}"
+        file_path = output_path
+        file_path.write_bytes(processed)
+    return yaml.safe_load(processed)
+
+
+def process_sensitive_files(discovery_files, cloud_passport_dir, cloud_name, discovery_secret_key):
     sensitive_file = cloud_passport_dir / f"{cloud_name}-creds.yml"
     old_sensitive_file = cloud_passport_dir / f"{cloud_name}-old-creds.yml"
-
-    if sensitive_file.exists():
-        old_sensitive_file_content = sensitive_file.read_text()
-    else:
-        old_sensitive_file_content = ""
 
     for f in discovery_files:
         if "sensitive" in f.name:
             process_credentials(f)
             shutil.copyfile(f, sensitive_file)
-    old_sensitive_file.write_text(old_sensitive_file_content)
+    process_encrypted_file(
+        file_path=sensitive_file,
+        secret_key=discovery_secret_key,
+        decrypt=True,
+        in_place=True
+    )
+    reencrypt_sensitive_file(sensitive_file, old_sensitive_file, discovery_secret_key)
 
 
 def process_passport_files(discovery_files, cloud_passport_dir, cloud_name):
@@ -90,11 +120,15 @@ def process_passport_files(discovery_files, cloud_passport_dir, cloud_name):
             f.write_text(replaced)
             shutil.copyfile(f, cloud_passport)
             break
+    header_text = ("The contents of this file is generated from Cloud Passport discovery procedure.\nContents will be "
+                   "overwritten by next discovery.\nPlease do not modify this file.")
+    addHeaderToYaml(cloud_passport, header_text)
 
 
 def process_discovery_files(env_name: str,
                             envs_directory_path: str,
-                            dest_unpack_files: str):
+                            dest_unpack_files: str,
+                            discovery_secret_key: str):
     envs_directory_path = Path(envs_directory_path)
     dest_unpack_files = Path(dest_unpack_files)
 
@@ -105,15 +139,22 @@ def process_discovery_files(env_name: str,
 
     cleanup_dir(cloud_passport_dir)
     discovery_files = list(dest_unpack_files.rglob("*"))
-    process_sensitive_files(discovery_files, cloud_passport_dir, cloud_name)
+    process_sensitive_files(discovery_files, cloud_passport_dir, cloud_name, discovery_secret_key)
     process_passport_files(discovery_files, cloud_passport_dir, cloud_name)
+
+
+def add_header_to_yaml(path: str | Path, text: str):
+    path = Path(path)
+    original_content = path.read_text(encoding="utf-8")
+    path.write_text(f"{text}\n{original_content}", encoding="utf-8")
+    return path.read_text(encoding="utf-8")
 
 
 def main():
     base_dir = os.getenv("CI_PROJECT_DIR")
 
     integration_config = get_integration_config(Path(f"{base_dir}/configuration/integration.yml"))
-    cred_config = get_cred_config(Path(f"{base_dir}/configuration/credentials/credentials.yml"))
+    cred_config = process_encrypted_file(Path(f"{base_dir}/configuration/credentials/credentials.yml"), decrypt=True)
 
     self_token = cred_id(integration_config.get("self_token"))
     git_token = cred_config[self_token[0]]["data"][self_token[1]]
@@ -152,8 +193,9 @@ def main():
     dest_unpack_files = "/tmp/passport"
     unpack_archive(dest_archive_path, os.path.dirname(dest_unpack_files))
 
-    process_discovery_files(env_name, f"{base_dir}/environments", dest_unpack_files)
-    gitlab_vars_api = gl.get_project_variables(downstream_project_id)
+    gitlab_vars = gl.get_project_variables(downstream_project_id)
+    discovery_secret_key = gitlab_vars.get(secret_key_var_name).json.value
+    process_discovery_files(env_name, f"{base_dir}/environments", dest_unpack_files, discovery_secret_key)
 
 
 if __name__ == "__main__":

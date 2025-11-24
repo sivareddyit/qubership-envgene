@@ -26,4 +26,3 @@
 #archive_url: "{{ lookup('env','CI_API_V4_URL') }}/projects/{{ lookup('env','parent_project_id') }}/jobs/artifacts/{{ lookup('env','parent_pipe_branch') }}/download?job={{ lookup('env','parent_job_name') }}"
 #gitlab_vars_api: "{{ lookup('env','CI_API_V4_URL') }}/projects/{{ lookup('env','parent_project_id') }}/variables"
 #
-#header_text: "The contents of this file is generated from Cloud Passport discovery procedure.\nContents will be overwritten by next discovery.\nPlease do not modify this file."

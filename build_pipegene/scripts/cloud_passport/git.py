@@ -1,7 +1,5 @@
 from pathlib import Path
-
 from git import Repo, GitCommandError
-
 from python.envgene.envgenehelper.http_helper import ApiClient, download_file
 
 

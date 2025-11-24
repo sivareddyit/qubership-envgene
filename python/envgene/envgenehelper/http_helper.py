@@ -17,6 +17,8 @@ class ApiClient:
                 verify=self.verify_ssl,
                 timeout=timeout,
             )
+            if response.status_code == 404:
+                return {}
             response.raise_for_status()
             return response.json()
 
@@ -30,11 +32,11 @@ class ApiClient:
             Path(dest).parent.mkdir(parents=True, exist_ok=True)
 
             with requests.get(
-                url,
-                headers=headers,
-                stream=True,
-                verify=self.verify_ssl,
-                timeout=timeout,
+                    url,
+                    headers=headers,
+                    stream=True,
+                    verify=self.verify_ssl,
+                    timeout=timeout,
             ) as r:
                 r.raise_for_status()
 
