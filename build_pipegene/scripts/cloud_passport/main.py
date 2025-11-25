@@ -142,13 +142,6 @@ def process_discovery_files(env_name: str,
     process_passport_files(discovery_files, cloud_passport_dir, cloud_name)
 
 
-def add_header_to_yaml(path: str | Path, text: str):
-    path = Path(path)
-    original_content = path.read_text(encoding="utf-8")
-    path.write_text(f"{text}\n{original_content}", encoding="utf-8")
-    return path.read_text(encoding="utf-8")
-
-
 def main():
     base_dir = os.getenv("CI_PROJECT_DIR")
 
