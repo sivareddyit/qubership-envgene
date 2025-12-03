@@ -78,6 +78,7 @@ class DockerConfig(BaseSchema):
     staging_repo_name: Optional[str] = ""
     release_repo_name: Optional[str] = ""
     group_name: Optional[str] = ""
+    auth_config: Optional[str] = None
 
 
 class GoConfig(BaseSchema):

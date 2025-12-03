@@ -40,7 +40,7 @@ class CloudAuthHelper:
         
         logger.info(f"Resolved authConfig '{auth_ref}' -> provider: {auth_config.provider}")
         return auth_config
-    
+
     @staticmethod
     def resolve_credentials(auth_config: AuthConfig, env_creds: Dict[str, dict]) -> dict:
         cred_id = auth_config.credentials_id
@@ -54,7 +54,7 @@ class CloudAuthHelper:
         
         cred_entry = env_creds[cred_id]
         logger.info(f"Resolved credentials for '{cred_id}'")
-        
+
         if isinstance(cred_entry, dict) and "data" in cred_entry:
             creds = cred_entry["data"]
         else:
@@ -69,7 +69,7 @@ class CloudAuthHelper:
                     raise ValueError(f"GCP service_account credentials must have 'secret'. Got: {list(creds.keys())}")
         
         return creds
-    
+
     @staticmethod
     def _extract_repository_name(url: str) -> str:
         url = url.rstrip("/")
@@ -102,7 +102,7 @@ class CloudAuthHelper:
         
         logger.warning(f"Could not extract region from URL: {url}, using default")
         return "us-east-1"
-    
+
     @staticmethod
     def create_maven_searcher(registry: Registry, env_creds: Dict[str, dict]) -> 'MavenArtifactSearcher':
         if MavenArtifactSearcher is None:
@@ -124,7 +124,7 @@ class CloudAuthHelper:
             return CloudAuthHelper._configure_aws(searcher, auth_config, creds, registry_url)
         elif auth_config.provider == "gcp":
             return CloudAuthHelper._configure_gcp(searcher, auth_config, creds, registry_url)
-    
+
     @staticmethod
     def _configure_aws(searcher: 'MavenArtifactSearcher', auth_config: AuthConfig, creds: dict,
                        registry_url: str) -> 'MavenArtifactSearcher':
@@ -144,7 +144,7 @@ class CloudAuthHelper:
             region_name=region,
             repository=repo_name
         )
-    
+
     @staticmethod
     def _configure_gcp(searcher: 'MavenArtifactSearcher', auth_config: AuthConfig, creds: dict,
                        registry_url: str) -> 'MavenArtifactSearcher':
