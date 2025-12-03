@@ -1,5 +1,3 @@
-"""Authentication helper for V2 cloud registries (AWS CodeArtifact, GCP Artifact Registry)"""
-
 import re
 from typing import Optional, Dict
 from loguru import logger
@@ -17,7 +15,6 @@ class CloudAuthHelper:
     
     @staticmethod
     def resolve_auth_config(registry: Registry, artifact_type: str = "maven") -> Optional[AuthConfig]:
-        """Resolves authConfig reference for given artifact type"""
         if artifact_type == "maven":
             config = registry.maven_config
         elif artifact_type == "docker":
@@ -46,7 +43,6 @@ class CloudAuthHelper:
     
     @staticmethod
     def resolve_credentials(auth_config: AuthConfig, env_creds: Dict[str, dict]) -> dict:
-        """Resolves credentials from credentialsId"""
         cred_id = auth_config.credentials_id
         
         if not env_creds:
@@ -76,7 +72,6 @@ class CloudAuthHelper:
     
     @staticmethod
     def _extract_repository_name(url: str) -> str:
-        """Extract repository name from Maven URL"""
         url = url.rstrip("/")
         if "codeartifact" in url and "/maven/" in url:
             parts = url.split("/maven/")
@@ -96,7 +91,6 @@ class CloudAuthHelper:
     
     @staticmethod
     def _extract_region(url: str, auth_config: AuthConfig) -> str:
-        """Extract region from URL or auth_config"""
         if auth_config.provider == "aws" and auth_config.aws_region:
             return auth_config.aws_region
         aws_match = re.search(r'\.([a-z0-9-]+)\.amazonaws\.com', url)
@@ -111,7 +105,6 @@ class CloudAuthHelper:
     
     @staticmethod
     def create_maven_searcher(registry: Registry, env_creds: Dict[str, dict]) -> 'MavenArtifactSearcher':
-        """Creates authenticated MavenArtifactSearcher for V2 registry"""
         if MavenArtifactSearcher is None:
             raise ImportError("qubership_pipelines_common_library not available")
         
@@ -135,7 +128,6 @@ class CloudAuthHelper:
     @staticmethod
     def _configure_aws(searcher: 'MavenArtifactSearcher', auth_config: AuthConfig, creds: dict,
                        registry_url: str) -> 'MavenArtifactSearcher':
-        """Configure AWS CodeArtifact authentication"""
         access_key = creds["username"]
         secret_key = creds["password"]
         if not auth_config.aws_domain:
@@ -156,7 +148,6 @@ class CloudAuthHelper:
     @staticmethod
     def _configure_gcp(searcher: 'MavenArtifactSearcher', auth_config: AuthConfig, creds: dict,
                        registry_url: str) -> 'MavenArtifactSearcher':
-        """Configure GCP Artifact Registry authentication"""
         if auth_config.auth_method != "service_account":
             raise ValueError(f"GCP auth_method '{auth_config.auth_method}' not supported")
         

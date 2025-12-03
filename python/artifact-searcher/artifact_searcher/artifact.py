@@ -258,7 +258,6 @@ async def check_artifact_async(
     app: Application, artifact_extension: FileExtension, version: str,
     env_creds: Optional[dict] = None
 ) -> Optional[tuple[str, tuple[str, str]]]:
-    """Routes to V2 (cloud-aware) or V1 (URL-based) search based on Registry version"""
     registry_version = getattr(app.registry, 'version', "1.0")
     
     if registry_version == "2.0":
@@ -275,7 +274,6 @@ async def check_artifact_async(
 
 async def _check_artifact_v2_async(app: Application, artifact_extension: FileExtension, version: str,
                                    env_creds: Optional[dict]) -> Optional[tuple[str, tuple[str, str]]]:
-    """V2 artifact search using Maven Client with cloud authentication"""
     if not env_creds:
         logger.warning(f"V2 registry but no env_creds provided for {app.name}, falling back to V1")
         return await _check_artifact_v1_async(app, artifact_extension, version)
@@ -315,7 +313,6 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
         maven_relative_path = urls[0]
         logger.info(f"Found {artifact_extension.value} artifact via Maven Client at: {maven_relative_path}")
         
-        # Download artifact using Maven Client
         app_local_path = create_app_artifacts_local_path(app.name, version)
         artifact_filename = os.path.basename(maven_relative_path)
         local_path = os.path.join(app_local_path, artifact_filename)
@@ -328,7 +325,6 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
         downloaded_path = await loop.run_in_executor(None, download_with_searcher)
         logger.info(f"Downloaded {artifact_extension.value} artifact to: {downloaded_path}")
         
-        # Construct full URL for tracking
         registry_domain = app.registry.maven_config.repository_domain_name
         if "SNAPSHOT" in version.upper():
             repo_path = app.registry.maven_config.target_snapshot
@@ -345,7 +341,6 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
 
 async def _check_artifact_v1_async(app: Application, artifact_extension: FileExtension,
                                    version: str) -> Optional[tuple[str, tuple[str, str]]]:
-    """V1 artifact search using URL-based approach"""
     result = await _attempt_check(app, version, artifact_extension)
     if result is not None:
         return result

@@ -55,19 +55,14 @@ class MavenConfig(BaseSchema):
 
 
 class AuthConfig(BaseSchema):
-    """Authentication configuration for V2 registries"""
     credentials_id: str
     auth_type: Optional[str] = None
     provider: Optional[str] = None
     auth_method: Optional[str] = None
-    
-    # AWS-specific
     aws_region: Optional[str] = None
     aws_domain: Optional[str] = None
     aws_role_arn: Optional[str] = None
     aws_role_session_prefix: Optional[str] = "nc-devops-m2m-session"
-    
-    # GCP-specific
     gcp_reg_project: Optional[str] = None
     gcp_reg_pool_id: Optional[str] = None
     gcp_reg_provider_id: Optional[str] = None
