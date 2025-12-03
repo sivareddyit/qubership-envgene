@@ -149,9 +149,8 @@ def create_app_artifacts_local_path(app_name, app_version):
 
 async def download(session, artifact_info: ArtifactInfo) -> ArtifactInfo:
     """Downloads an artifact to a local directory"""
-    # Skip download if already downloaded (V2 cloud artifacts)
     if artifact_info.local_path:
-        logger.info(f"Artifact already downloaded (V2): {artifact_info.local_path}")
+        logger.info(f"Artifact already downloaded: {artifact_info.local_path}")
         return artifact_info
     
     url = artifact_info.url
@@ -258,7 +257,7 @@ async def _attempt_check(
 async def check_artifact_async(
     app: Application, artifact_extension: FileExtension, version: str,
     env_creds: Optional[dict] = None
-) -> Optional[tuple[str, tuple[str, str]]] | None:
+) -> Optional[tuple[str, tuple[str, str]]]:
     """Routes to V2 (cloud-aware) or V1 (URL-based) search based on Registry version"""
     registry_version = getattr(app.registry, 'version', "1.0")
     
@@ -331,13 +330,10 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
         
         # Construct full URL for tracking
         registry_domain = app.registry.maven_config.repository_domain_name
-        folder = version_to_folder_name(version)
-        if folder == "releases":
-            repo_path = app.registry.maven_config.target_release
-        elif folder == "staging":
-            repo_path = app.registry.maven_config.target_staging
-        else:
+        if "SNAPSHOT" in version.upper():
             repo_path = app.registry.maven_config.target_snapshot
+        else:
+            repo_path = app.registry.maven_config.target_release
         
         full_url = f"{registry_domain.rstrip('/')}/{repo_path.rstrip('/')}/{maven_relative_path}"
         return full_url, ("v2_downloaded", local_path)
