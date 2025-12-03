@@ -300,7 +300,7 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
             return await _check_artifact_v1_async(app, artifact_extension, version)
         
         logger.info(f"Creating Maven Client searcher for {app.name} with provider={auth_config.provider}")
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         
         searcher = await loop.run_in_executor(None, CloudAuthHelper.create_maven_searcher, app.registry, env_creds)
         
