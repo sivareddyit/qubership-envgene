@@ -65,6 +65,7 @@ public class ExpressionLanguage extends AbstractLanguage {
 
     private final Jinjava jinjava;
     private final GStringToJinJavaTranslator gStringToJinJavaTranslator;
+    private final DynamicPropertyResolver dynamicResolver;
 
     public ExpressionLanguage(Binding binding) {
         super(binding);
@@ -82,6 +83,8 @@ public class ExpressionLanguage extends AbstractLanguage {
 
         this.binding.forEach((key1, value) ->
                 this.binding.put(key1, translateParameter(value.getValue())));
+
+        this.dynamicResolver = new DynamicPropertyResolver(this.binding);
     }
 
     private Parameter translateParameter(Object value) {
@@ -285,19 +288,22 @@ public class ExpressionLanguage extends AbstractLanguage {
 
         // Use Jinjava's expression resolver - returns typed Object (Integer, Boolean, etc.)
         Object resolvedValue = resolveWithJinjava(referencedVar, binding);
+
+        // Unwrap if still a Parameter
+        if (resolvedValue instanceof Parameter) {
+            resolvedValue = ((Parameter) resolvedValue).getValue();
+        }
+
         if (resolvedValue == null || resolvedValue instanceof String) {
             return null;
         }
 
-        // Get secured flag from binding
-        boolean isSecured = false;
+        // Get secured flag from source parameter
         Parameter srcParam = binding.get(referencedVar);
-        if (srcParam == null && this.binding != null) {
+        if (srcParam == null) {
             srcParam = this.binding.get(referencedVar);
         }
-        if (srcParam != null) {
-            isSecured = srcParam.isSecured();
-        }
+        boolean isSecured = srcParam != null && srcParam.isSecured();
 
         Parameter result = new Parameter(resolvedValue);
         if (value instanceof Parameter) {
@@ -316,7 +322,7 @@ public class ExpressionLanguage extends AbstractLanguage {
     private Object resolveWithJinjava(String expression, Map<String, Parameter> binding) {
         try {
             Context context = new Context(jinjava.getGlobalContextCopy(), binding, jinjava.getGlobalConfig().getDisabled());
-            context.setDynamicVariableResolver(new DynamicPropertyResolver(this.binding));
+            context.setDynamicVariableResolver(this.dynamicResolver);
 
             JinjavaInterpreter interpreter = jinjava.getGlobalConfig()
                     .getInterpreterFactory()
