@@ -94,11 +94,11 @@ envTemplate:
   # Optional
   # Blue-Green deployment artifacts for peer and origin namespaces
   # Used ONLY for rendering peer and origin Namespaces in BG Domain
-  # If specified, bgArtifacts and artifact are NOT mutually exclusive:
-  # - bgArtifacts is used for rendering peer/origin Namespaces
+  # If specified, bgNsArtifacts and artifact are NOT mutually exclusive:
+  # - bgNsArtifacts is used for rendering peer/origin Namespaces
   # - artifact is used for rendering all other Environment Instance objects
   # The role of a Namespace (origin, peer, or controller) is determined through the BG Domain object
-  bgArtifacts:
+  bgNsArtifacts:
     # Mandatory
     # Template artifact in application:version notation for origin namespace
     origin: string

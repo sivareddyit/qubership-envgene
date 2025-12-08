@@ -117,7 +117,7 @@ This parameter serves as a configuration for an extension point. Integration wit
 
 ### `ENV_TEMPLATE_VERSION_ORIGIN`
 
-**Description**: If provided, system updates the Blue-Green origin template artifact version in the Environment Inventory. System overrides `envTemplate.bgArtifacts.origin` at `/environments/<ENV_NAME>/Inventory/env_definition.yml`
+**Description**: If provided, system updates the Blue-Green origin template artifact version in the Environment Inventory. System overrides `envTemplate.bgNsArtifacts.origin` at `/environments/<ENV_NAME>/Inventory/env_definition.yml`
 
 This parameter is used for environments that use Blue-Green Deployment support. The value should be in `application:version` notation.
 
@@ -129,7 +129,7 @@ This parameter is used for environments that use Blue-Green Deployment support. 
 
 ### `ENV_TEMPLATE_VERSION_PEER`
 
-**Description**: If provided, system updates the Blue-Green peer template artifact version in the Environment Inventory. System overrides `envTemplate.bgArtifacts.peer` at `/environments/<ENV_NAME>/Inventory/env_definition.yml`
+**Description**: If provided, system updates the Blue-Green peer template artifact version in the Environment Inventory. System overrides `envTemplate.bgNsArtifacts.peer` at `/environments/<ENV_NAME>/Inventory/env_definition.yml`
 
 This parameter is used for environments that use Blue-Green Deployment support. The value should be in `application:version` notation.
 
