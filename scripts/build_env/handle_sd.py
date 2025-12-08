@@ -300,15 +300,32 @@ def download_sds_with_version(env, base_sd_path, sd_version, effective_merge_mod
     extract_sds_from_json(env, base_sd_path, sd_data_json, effective_merge_mode)
 
 
-def download_sd_by_appver(app_name: str, version: str, plugins: PluginEngine, env_creds: dict = None) -> dict[str, object]:
+def download_sd_by_appver(
+    app_name: str,
+    version: str,
+    plugins: PluginEngine,
+    env_creds: dict = None,
+) -> dict[str, object]:
     if 'SNAPSHOT' in version:
         raise ValueError("SNAPSHOT is not supported version of Solution Descriptor artifacts")
     app_def = get_appdef_for_app(f"{app_name}:{version}", app_name, plugins)
-    artifact_info = asyncio.run(artifact.check_artifact_async(app_def, artifact.FileExtension.JSON, version, env_creds))
+    artifact_info = asyncio.run(
+        artifact.check_artifact_async(app_def, artifact.FileExtension.JSON, version, env_creds)
+    )
     if not artifact_info:
-        raise ValueError(
-            f'Solution descriptor content was not received for {app_name}:{version}')
-    sd_url, _ = artifact_info
+        raise ValueError(f'Solution descriptor content was not received for {app_name}:{version}')
+
+    sd_url, repo_info = artifact_info
+    repo_marker, extra_info = repo_info
+
+    # V2 artifacts are already downloaded locally - read from file
+    if repo_marker == "v2_downloaded":
+        local_path = extra_info
+        logger.info(f"Reading V2 downloaded SD from local path: {local_path}")
+        with open(local_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+    # V1 artifacts - download from URL
     return artifact.download_json_content(sd_url)
 
 
