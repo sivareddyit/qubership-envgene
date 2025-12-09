@@ -295,15 +295,11 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
     loop = asyncio.get_running_loop()
 
     searcher = await loop.run_in_executor(None, CloudAuthHelper.create_maven_searcher, app.registry, env_creds)
-    # MavenArtifact expects positional args: (group_id, artifact_id, version, version_by_spec, classifier='', extension='jar')
-    maven_artifact = MavenArtifact(
-        app.group_id,
-        app.artifact_id,
-        version,
-        version,  # version_by_spec - use same as version
-        '',  # classifier
-        artifact_extension.value,  # extension
-    )
+    # Artifact class in common library expects: (artifact_id, version, extension='jar')
+    # But we need to pass the full artifact string in format "group_id:artifact_id:version"
+    artifact_string = f"{app.group_id}:{app.artifact_id}:{version}"
+    maven_artifact = MavenArtifact.from_string(artifact_string)
+    maven_artifact.extension = artifact_extension.value
     urls = await loop.run_in_executor(None, partial(searcher.find_artifact_urls, artifact=maven_artifact))
 
     if not urls:
