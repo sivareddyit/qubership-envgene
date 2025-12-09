@@ -45,7 +45,7 @@ When calculating the [Effective Set](/docs/features/calculator-cli.md#effective-
 
 During Environment generation, as part of the [`env_build`](/docs/envgene-pipelines.md#instance-pipeline) job, two types of Resource Profile Overrides are processed and combined:
 
-1. [Template Resource Profile Override](/docs/envgene-objects.md#templates-resource-profile-override)
+1. [Template Resource Profile Override](/docs/envgene-objects.md#template-resource-profile-override)
 
     The Template Resource Profile Override is configured individually for each Namespace or Cloud, identified by the `profile.name` property.  
     Each override is represented as a YAML file located at `/templates/resource_profiles` within the Environment Template repository.  
@@ -123,7 +123,7 @@ The Environment-Specific Resource Profile Override is merged **into** the Templa
         - If the parameter is missing in the target, add the entire parameter from the template.
         - If the parameter exists in both, update the parameter in the target by overwriting its `value` with the one from the template.
 
-In this mode, the resulting [Resource Profile Override](/docs/envgene-objects.md#resource-profile-override) will have the same name as the [Template Resource Profile Override](/docs/envgene-objects.md#templates-resource-profile-override).
+In this mode, the resulting [Resource Profile Override](/docs/envgene-objects.md#resource-profile-override) will have the same name as the [Template Resource Profile Override](/docs/envgene-objects.md#template-resource-profile-override).
 
 ### Naming Rules for Resource Profile Override
 
