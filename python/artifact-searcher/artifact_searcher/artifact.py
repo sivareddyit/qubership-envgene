@@ -287,7 +287,7 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
     from qubership_pipelines_common_library.v1.maven_client import Artifact as MavenArtifact
 
     auth_config = CloudAuthHelper.resolve_auth_config(app.registry, "maven")
-    if not auth_config or auth_config.provider not in ["aws", "gcp"]:
+    if not auth_config or auth_config.provider not in ["aws", "gcp", "artifactory", "nexus"]:
         logger.debug(f"Unsupported provider for {app.name}, falling back to V1")
         return await _check_artifact_v1_async(app, artifact_extension, version)
 
@@ -345,6 +345,7 @@ async def _check_artifact_v1_async(app: Application, artifact_extension: FileExt
         logger.debug("Domain is same after editing, skipping retry")
 
     logger.warning("Artifact not found")
+    return None
 
 
 def unzip_file(artifact_id: str, app_name: str, app_version: str, zip_url: str):

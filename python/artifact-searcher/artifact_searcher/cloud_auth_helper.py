@@ -64,6 +64,9 @@ class CloudAuthHelper:
             if auth_config.auth_method == "service_account":
                 if "secret" not in creds:
                     raise ValueError(f"GCP service_account credentials must have 'secret'. Got: {list(creds.keys())}")
+        elif auth_config.provider in ["artifactory", "nexus"]:
+            if "username" not in creds or "password" not in creds:
+                raise ValueError(f"{auth_config.provider} credentials must have 'username' and 'password'. Got: {list(creds.keys())}")
         
         return creds
 
@@ -110,8 +113,8 @@ class CloudAuthHelper:
             raise ValueError("Could not resolve authConfig for maven artifacts")
         if not auth_config.provider:
             raise ValueError("AuthConfig has no provider specified")
-        if auth_config.provider not in ["aws", "gcp"]:
-            raise ValueError(f"Unsupported provider: {auth_config.provider}. Supported: aws, gcp")
+        if auth_config.provider not in ["aws", "gcp", "artifactory", "nexus"]:
+            raise ValueError(f"Unsupported provider: {auth_config.provider}. Supported: aws, gcp, artifactory, nexus")
         
         creds = CloudAuthHelper.resolve_credentials(auth_config, env_creds)
         registry_url = registry.maven_config.repository_domain_name
@@ -121,6 +124,10 @@ class CloudAuthHelper:
             return CloudAuthHelper._configure_aws(searcher, auth_config, creds, registry_url)
         elif auth_config.provider == "gcp":
             return CloudAuthHelper._configure_gcp(searcher, auth_config, creds, registry_url)
+        elif auth_config.provider == "artifactory":
+            return CloudAuthHelper._configure_artifactory(searcher, creds)
+        elif auth_config.provider == "nexus":
+            return CloudAuthHelper._configure_nexus(searcher, creds)
 
     @staticmethod
     def _configure_aws(searcher: 'MavenArtifactSearcher', auth_config: AuthConfig, creds: dict,
@@ -162,3 +169,17 @@ class CloudAuthHelper:
             region_name=region,
             repository=repo_name
         )
+
+    @staticmethod
+    def _configure_artifactory(searcher: 'MavenArtifactSearcher', creds: dict) -> 'MavenArtifactSearcher':
+        username = creds.get("username", "")
+        password = creds.get("password", "")
+        logger.info("Configuring JFrog Artifactory with credentials")
+        return searcher.with_artifactory(username=username, password=password)
+
+    @staticmethod
+    def _configure_nexus(searcher: 'MavenArtifactSearcher', creds: dict) -> 'MavenArtifactSearcher':
+        username = creds.get("username", "")
+        password = creds.get("password", "")
+        logger.info("Configuring Sonatype Nexus with credentials")
+        return searcher.with_nexus(username=username, password=password)
