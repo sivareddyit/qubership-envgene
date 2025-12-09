@@ -294,13 +294,23 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
     logger.info(f"V2 search for {app.name} with provider={auth_config.provider}")
     loop = asyncio.get_running_loop()
 
-    searcher = await loop.run_in_executor(None, CloudAuthHelper.create_maven_searcher, app.registry, env_creds)
+    try:
+        searcher = await loop.run_in_executor(None, CloudAuthHelper.create_maven_searcher, app.registry, env_creds)
+    except (ValueError, KeyError, ImportError) as e:
+        logger.warning(f"Failed to create V2 searcher for {app.name}: {e}. Falling back to V1.")
+        return await _check_artifact_v1_async(app, artifact_extension, version)
+    
     # Artifact class in common library expects: (artifact_id, version, extension='jar')
     # But we need to pass the full artifact string in format "group_id:artifact_id:version"
     artifact_string = f"{app.group_id}:{app.artifact_id}:{version}"
     maven_artifact = MavenArtifact.from_string(artifact_string)
     maven_artifact.extension = artifact_extension.value
-    urls = await loop.run_in_executor(None, partial(searcher.find_artifact_urls, artifact=maven_artifact))
+    
+    try:
+        urls = await loop.run_in_executor(None, partial(searcher.find_artifact_urls, artifact=maven_artifact))
+    except Exception as e:
+        logger.warning(f"V2 search failed for {app.name}: {e}. Falling back to V1.")
+        return await _check_artifact_v1_async(app, artifact_extension, version)
 
     if not urls:
         logger.warning(f"No artifacts found for {app.artifact_id}:{version}")
@@ -317,10 +327,16 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
     await loop.run_in_executor(None, lambda: searcher.download_artifact(maven_relative_path, str(local_path)))
     logger.info(f"Downloaded to: {local_path}")
 
-    registry_domain = app.registry.maven_config.repository_domain_name
-    folder_name = version_to_folder_name(version)
-    repo_path = app.registry.maven_config.target_snapshot if folder_name.endswith("-SNAPSHOT") else app.registry.maven_config.target_release
-    full_url = f"{registry_domain.rstrip('/')}/{repo_path.rstrip('/')}/{maven_relative_path}"
+    # For cloud providers (AWS, GCP), construct full URL
+    # For Artifactory/Nexus, the search already returns full URLs
+    if auth_config.provider in ["aws", "gcp"]:
+        registry_domain = app.registry.maven_config.repository_domain_name
+        folder_name = version_to_folder_name(version)
+        repo_path = app.registry.maven_config.target_snapshot if folder_name.endswith("-SNAPSHOT") else app.registry.maven_config.target_release
+        full_url = f"{registry_domain.rstrip('/')}/{repo_path.rstrip('/')}/{maven_relative_path}"
+    else:
+        # Artifactory/Nexus return full URLs from search
+        full_url = maven_relative_path
 
     return full_url, ("v2_downloaded", local_path)
 

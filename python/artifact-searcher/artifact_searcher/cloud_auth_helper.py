@@ -65,8 +65,12 @@ class CloudAuthHelper:
                 if "secret" not in creds:
                     raise ValueError(f"GCP service_account credentials must have 'secret'. Got: {list(creds.keys())}")
         elif auth_config.provider in ["artifactory", "nexus"]:
-            if "username" not in creds or "password" not in creds:
-                raise ValueError(f"{auth_config.provider} credentials must have 'username' and 'password'. Got: {list(creds.keys())}")
+            # Allow anonymous access for Artifactory/Nexus
+            # Only validate credentials if they are provided
+            if "username" in creds and not creds.get("username"):
+                logger.warning(f"{auth_config.provider} has empty username - using anonymous access")
+            if "password" in creds and not creds.get("password"):
+                logger.warning(f"{auth_config.provider} has empty password - using anonymous access")
         
         return creds
 
