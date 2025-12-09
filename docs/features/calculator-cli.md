@@ -1220,4 +1220,4 @@ The contents of this file are identical to [mapping.yml in the Deployment Parame
 
 #### [Version 2.0] Macros
 
-Calculator command-line tool resolves [macros](/docs/template-macros.md#calculator-cli-macros)
+Calculator command-line tool resolves [macros](/docs/template-macros.md#calculator-command-line-tool-macros)

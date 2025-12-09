@@ -27,7 +27,7 @@ The Resource Profiles system has a 3-level hierarchy:
 
     You can have any number of profiles and call them whatever you want, e.g. `small`, `medium`, `large`.
 
-2. [Template Resource Profile Override](/docs/envgene-objects.md#templates-resource-profile-override)
+2. [Template Resource Profile Override](/docs/envgene-objects.md#template-resource-profile-override)
 
     These are customizations for performance parameters, over a Baseline Resource Profile.
     Such overrides are created by the configurator in the Template repository, to further adjust performance parameters on top of the Baseline Resource Profile Override for all environments of the same type.
