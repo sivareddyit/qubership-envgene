@@ -15,21 +15,18 @@ class CloudAuthHelper:
     
     @staticmethod
     def resolve_auth_config(registry: Registry, artifact_type: str = "maven") -> Optional[AuthConfig]:
-        if artifact_type == "maven":
-            config = registry.maven_config
-        elif artifact_type == "docker":
-            config = registry.docker_config
-        else:
-            logger.warning(f"Unsupported artifact type: {artifact_type}")
+        if artifact_type != "maven":
+            logger.warning(f"Unsupported artifact type: {artifact_type}. Only 'maven' is supported.")
             return None
         
+        config = registry.maven_config
         auth_ref = getattr(config, 'auth_config', None)
         if not auth_ref:
-            logger.debug(f"No authConfig reference in {artifact_type} config")
+            logger.debug("No authConfig reference in maven config")
             return None
         
         if not registry.auth_config:
-            logger.warning(f"Registry has no authConfig dictionary but {artifact_type} references '{auth_ref}'")
+            logger.warning(f"Registry has no authConfig dictionary but maven config references '{auth_ref}'")
             return None
         
         auth_config = registry.auth_config.get(auth_ref)
