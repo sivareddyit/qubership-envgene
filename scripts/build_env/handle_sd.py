@@ -243,7 +243,9 @@ def multiply_sds_to_single(sds_data, effective_merge_mode: MergeType):
 
         full_sd_from_pipe = basic_merge_multiple(cropped_sds)
 
-    logger.info(f"Merged data after performing basic-merge for multiple SDs: {full_sd_from_pipe}")
+    # Log summary instead of full SD to avoid huge logs
+    app_count = len(full_sd_from_pipe.get("applications", [])) if full_sd_from_pipe else 0
+    logger.info(f"Merged SD with {app_count} applications")
     return full_sd_from_pipe
 
 
@@ -290,7 +292,9 @@ def extract_sds_from_json(env, base_sd_path: Path, sd_data, effective_merge_mode
         exit(1)
     sds_from_pipe = json.loads(sd_data)
 
-    logger.info(f"printing data inside extract_sd_from_json {sds_from_pipe}")
+    # Log summary instead of full SD content
+    sd_count = len(sds_from_pipe) if isinstance(sds_from_pipe, list) else 1
+    logger.info(f"Loaded {sd_count} SD(s) from SD_DATA")
     if not isinstance(sds_from_pipe, (list, dict)) or not sds_from_pipe:
         logger.error("SD_DATA must be a non-empty list of SD dictionaries or a single SD.")
         exit(1)
