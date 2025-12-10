@@ -9,6 +9,14 @@ except ImportError:
     logger.warning("qubership_pipelines_common_library not available - V2 cloud registry support disabled")
     MavenArtifactSearcher = None
 
+try:
+    from google.oauth2 import service_account
+    from google.auth.transport.requests import Request
+    GCP_AUTH_AVAILABLE = True
+except ImportError:
+    GCP_AUTH_AVAILABLE = False
+    logger.debug("google-auth not available - GCP direct download fallback disabled")
+
 from artifact_searcher.utils.models import Registry, AuthConfig
 
 
@@ -204,3 +212,50 @@ class CloudAuthHelper:
         password = creds.get("password", "")
         logger.info("Configuring Sonatype Nexus with credentials")
         return searcher.with_nexus(username=username, password=password)
+
+    @staticmethod
+    def get_gcp_access_token(service_account_json: str) -> Optional[str]:
+        """
+        Generate a GCP OAuth access token from service account credentials.
+        Used for direct HTTP downloads when the common library method times out.
+        """
+        if not GCP_AUTH_AVAILABLE:
+            logger.warning("google-auth library not available - cannot generate GCP access token")
+            return None
+        
+        try:
+            if isinstance(service_account_json, str):
+                sa_info = json.loads(service_account_json)
+            else:
+                sa_info = service_account_json
+            
+            credentials = service_account.Credentials.from_service_account_info(
+                sa_info,
+                scopes=['https://www.googleapis.com/auth/cloud-platform']
+            )
+            credentials.refresh(Request())
+            logger.debug("Generated fresh GCP OAuth access token")
+            return credentials.token
+        except Exception as e:
+            logger.error(f"Failed to generate GCP access token: {e}")
+            return None
+    
+    @staticmethod
+    def get_gcp_credentials_from_registry(registry: Registry, env_creds: Dict[str, dict]) -> Optional[str]:
+        """
+        Extract GCP service account JSON from registry auth config and env_creds.
+        Returns the service account JSON string for token generation.
+        """
+        auth_config = CloudAuthHelper.resolve_auth_config(registry, "maven")
+        if not auth_config or auth_config.provider != "gcp":
+            return None
+        
+        try:
+            creds = CloudAuthHelper.resolve_credentials(auth_config, env_creds)
+            service_account_data = creds.get("secret")
+            if isinstance(service_account_data, dict):
+                return json.dumps(service_account_data)
+            return service_account_data
+        except Exception as e:
+            logger.warning(f"Failed to extract GCP credentials: {e}")
+            return None

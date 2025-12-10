@@ -347,7 +347,60 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
             local_path = os.path.join(app_local_path, artifact_filename)
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
-            await loop.run_in_executor(None, lambda: searcher.download_artifact(maven_relative_path, str(local_path)))
+            # Add timeout to prevent indefinite hanging
+            download_timeout = DEFAULT_REQUEST_TIMEOUT * 4  # 120 seconds
+            logger.info(f"Starting V2 download with {download_timeout}s timeout to {local_path}")
+            
+            download_success = False
+            try:
+                await asyncio.wait_for(
+                    loop.run_in_executor(None, lambda: searcher.download_artifact(maven_relative_path, str(local_path))),
+                    timeout=download_timeout
+                )
+                download_success = True
+            except asyncio.TimeoutError:
+                logger.warning(f"V2 searcher.download_artifact timed out after {download_timeout}s, trying direct HTTP download")
+            except Exception as dl_err:
+                logger.warning(f"V2 searcher.download_artifact failed: {dl_err}, trying direct HTTP download")
+            
+            # Fallback: direct HTTP download for GCP/Artifactory/Nexus (which return full URLs)
+            if not download_success and auth_config.provider in ["gcp", "artifactory", "nexus"]:
+                logger.info(f"Attempting direct HTTP download from: {maven_relative_path}")
+                try:
+                    auth_headers = {}
+                    
+                    # For GCP, generate a fresh OAuth token
+                    if auth_config.provider == "gcp":
+                        sa_json = CloudAuthHelper.get_gcp_credentials_from_registry(app.registry, env_creds)
+                        if sa_json:
+                            access_token = CloudAuthHelper.get_gcp_access_token(sa_json)
+                            if access_token:
+                                auth_headers["Authorization"] = f"Bearer {access_token}"
+                                logger.info(f"Using fresh GCP OAuth token for direct download (token length: {len(access_token)})")
+                    
+                    logger.info(f"Making HTTP GET request...")
+                    # Use tuple timeout: (connect_timeout, read_timeout)
+                    response = requests.get(maven_relative_path, headers=auth_headers, timeout=(10, 60), stream=True)
+                    logger.info(f"HTTP response status: {response.status_code}")
+                    response.raise_for_status()
+                    
+                    # Stream download to handle large files
+                    with open(local_path, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            if chunk:
+                                f.write(chunk)
+                    download_success = True
+                    logger.info(f"Direct HTTP download successful to {local_path}")
+                except requests.exceptions.Timeout as timeout_err:
+                    logger.warning(f"Direct HTTP download timed out: {timeout_err}")
+                except requests.exceptions.HTTPError as http_err:
+                    logger.warning(f"Direct HTTP download HTTP error: {http_err} - Response: {response.text[:500] if response else 'N/A'}")
+                except Exception as http_err:
+                    logger.warning(f"Direct HTTP download failed: {type(http_err).__name__}: {http_err}")
+            
+            if not download_success:
+                raise TimeoutError(f"V2 artifact download failed for {maven_relative_path}")
+            
             logger.info(f"V2 artifact downloaded to: {local_path}")
             break  # Success - exit retry loop
             
