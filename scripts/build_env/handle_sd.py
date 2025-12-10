@@ -17,6 +17,40 @@ from envgenehelper.plugin_engine import PluginEngine
 from envgenehelper.sd_merge_helper import basic_merge_multiple
 
 
+def fix_yaml_document_separators(input_dir):
+    """
+    Fix YAML parsing errors by adding document separators to all YAML files
+    This prevents iTool parsing errors
+    """
+    logger.info("Fixing YAML document separators in Helm charts")
+    fixed_count = 0
+    for root, dirs, files in os.walk(input_dir):
+        for file in files:
+            if file.endswith(('.yaml', '.yml')):
+                file_path = os.path.join(root, file)
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    
+                    # Check if file starts with --- and is not empty
+                    if content.strip() and not content.lstrip().startswith('---'):
+                        # Add document separator at the beginning
+                        fixed_content = '---\n' + content
+                        with open(file_path, 'w', encoding='utf-8') as f:
+                            f.write(fixed_content)
+                        fixed_count += 1
+                        logger.debug(f"Fixed YAML document separator in: {file_path}")
+                except Exception as e:
+                    logger.warning(f"Could not fix YAML file {file_path}: {e}")
+    
+    if fixed_count > 0:
+        logger.info(f"Fixed document separators in {fixed_count} YAML files")
+    else:
+        logger.info("No YAML files needed fixing")
+    
+    return fixed_count
+
+
 class MergeType(Enum):
     EXTENDED = "extended-merge"
     REPLACE = "replace"
@@ -166,7 +200,8 @@ def calculate_sd_delta(sd_delta):
     return sd_delta
 
 
-def multiply_sds_to_single(sds_data, effective_merge_mode):
+def multiply_sds_to_single(sds_data, effective_merge_mode: MergeType):
+    full_sd_from_pipe = None
     if effective_merge_mode == MergeType.EXTENDED:
         if isinstance(sds_data, list):
             if len(sds_data) > 1:
@@ -178,6 +213,32 @@ def multiply_sds_to_single(sds_data, effective_merge_mode):
         sds_data = sds_data if isinstance(sds_data, list) else [sds_data]
         cropped_sds = []
         for sd in sds_data:
+            # Handle V2 SD structure - extract applications from graph if needed
+            if "applications" not in sd:
+                if "graph" in sd and "vertexList" in sd["graph"]:
+                    # Extract applications from V2 graph structure
+                    applications = []
+                    for vertex in sd["graph"]["vertexList"]:
+                        if vertex.get("type") in ["ui backend", "backend", "frontend", "service"]:
+                            app = {
+                                "id": vertex.get("id"),
+                                "name": vertex.get("name"),
+                                "version": f"{vertex.get('name')}:unknown",
+                                "type": vertex.get("type"),
+                                "directoryPath": vertex.get("directoryPath", "/var/input"),
+                                "releaseBranch": vertex.get("releaseBranch", "master"),
+                                "repository": vertex.get("repository", ""),
+                                "details": vertex.get("details", {}),
+                                "deployPostfix": ""
+                            }
+                            applications.append(app)
+                    sd["applications"] = applications
+                    logger.info(f"Extracted {len(applications)} applications from V2 SD graph")
+                else:
+                    # If no graph structure, create empty applications list
+                    sd["applications"] = []
+                    logger.warning("V2 SD has no applications key and no graph structure, creating empty applications list")
+
             cropped_sds.append({"applications": sd["applications"]})
 
         full_sd_from_pipe = basic_merge_multiple(cropped_sds)
@@ -195,6 +256,11 @@ def handle_sd(env, sd_source_type, sd_version, sd_data, sd_delta, sd_merge_mode)
         else:
             logger.warning(handle_sd_skip_msg)
         return
+
+    # Fix YAML document separators in /var/input to prevent iTool parsing errors
+    input_dir = "/var/input"
+    if os.path.exists(input_dir):
+        fix_yaml_document_separators(input_dir)
 
     sd_delta = calculate_sd_delta(sd_delta)
     effective_merge_mode = calculate_merge_mode(sd_merge_mode, sd_delta)
