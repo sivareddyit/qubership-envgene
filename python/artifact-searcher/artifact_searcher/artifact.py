@@ -327,15 +327,15 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
     await loop.run_in_executor(None, lambda: searcher.download_artifact(maven_relative_path, str(local_path)))
     logger.info(f"Downloaded to: {local_path}")
 
-    # For cloud providers (AWS, GCP), construct full URL
-    # For Artifactory/Nexus, the search already returns full URLs
-    if auth_config.provider in ["aws", "gcp"]:
+    # For AWS, construct full URL from resource ID
+    # For GCP, Artifactory, Nexus: the search already returns full URLs
+    if auth_config.provider == "aws":
         registry_domain = app.registry.maven_config.repository_domain_name
         folder_name = version_to_folder_name(version)
         repo_path = app.registry.maven_config.target_snapshot if folder_name.endswith("-SNAPSHOT") else app.registry.maven_config.target_release
         full_url = f"{registry_domain.rstrip('/')}/{repo_path.rstrip('/')}/{maven_relative_path}"
     else:
-        # Artifactory/Nexus return full URLs from search
+        # GCP, Artifactory, Nexus return full URLs from search
         full_url = maven_relative_path
 
     return full_url, ("v2_downloaded", local_path)
