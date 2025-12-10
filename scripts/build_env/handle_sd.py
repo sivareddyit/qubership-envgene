@@ -279,6 +279,9 @@ def handle_sd(env, sd_source_type, sd_version, sd_data, sd_delta, sd_merge_mode)
 
 def validate_applications(sd, effective_merge_mode: MergeType):
     applications = sd.get("applications")
+    if not applications:
+        logger.warning("SD has no applications or applications is empty")
+        return
     for app in applications:
         if effective_merge_mode != MergeType.EXTENDED and (not isinstance(app, dict) or not app.get("deployPostfix")):
             raise ValueError(
