@@ -1,4 +1,5 @@
 import re
+import json
 from typing import Optional, Dict
 from loguru import logger
 
@@ -41,6 +42,11 @@ class CloudAuthHelper:
     @staticmethod
     def resolve_credentials(auth_config: AuthConfig, env_creds: Dict[str, dict]) -> dict:
         cred_id = auth_config.credentials_id
+        
+        # Anonymous access - no credentials needed (for Artifactory/Nexus V2)
+        if not cred_id:
+            logger.info("No credentials_id specified - using anonymous access")
+            return {}
         
         if not env_creds:
             raise ValueError("env_creds is empty or None - cannot resolve credentials")
@@ -159,7 +165,18 @@ class CloudAuthHelper:
         if auth_config.auth_method != "service_account":
             raise ValueError(f"GCP auth_method '{auth_config.auth_method}' not supported")
         
-        service_account_json = creds["secret"]
+        service_account_data = creds["secret"]
+        # Handle both string (JSON) and dict (parsed YAML) formats
+        if isinstance(service_account_data, dict):
+            # Already parsed - convert to JSON string for the common library
+            service_account_json = json.dumps(service_account_data)
+            logger.debug("Converted GCP service account dict to JSON string")
+        elif isinstance(service_account_data, str):
+            # Already a JSON string
+            service_account_json = service_account_data
+        else:
+            raise ValueError(f"GCP service account must be dict or JSON string, got: {type(service_account_data)}")
+        
         if not auth_config.gcp_reg_project:
             raise ValueError("GCP auth requires gcp_reg_project in authConfig")
         

@@ -283,21 +283,37 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
         logger.debug(f"No maven authConfig for {app.name}, falling back to V1")
         return await _check_artifact_v1_async(app, artifact_extension, version)
 
-    from artifact_searcher.cloud_auth_helper import CloudAuthHelper
-    from qubership_pipelines_common_library.v1.maven_client import Artifact as MavenArtifact
-
-    auth_config = CloudAuthHelper.resolve_auth_config(app.registry, "maven")
-    if not auth_config or auth_config.provider not in ["aws", "gcp", "artifactory", "nexus"]:
-        logger.debug(f"Unsupported provider for {app.name}, falling back to V1")
+    try:
+        from artifact_searcher.cloud_auth_helper import CloudAuthHelper
+    except ImportError as e:
+        logger.warning(f"CloudAuthHelper import failed: {e}. Falling back to V1.")
         return await _check_artifact_v1_async(app, artifact_extension, version)
 
-    logger.info(f"V2 search for {app.name} with provider={auth_config.provider}")
+    try:
+        from qubership_pipelines_common_library.v1.maven_client import Artifact as MavenArtifact
+    except ImportError as e:
+        logger.warning(f"MavenArtifact import failed: {e}. Falling back to V1.")
+        return await _check_artifact_v1_async(app, artifact_extension, version)
+
+    auth_config = CloudAuthHelper.resolve_auth_config(app.registry, "maven")
+    if not auth_config:
+        logger.debug(f"Could not resolve authConfig for {app.name}, falling back to V1")
+        return await _check_artifact_v1_async(app, artifact_extension, version)
+    
+    if auth_config.provider not in ["aws", "gcp", "artifactory", "nexus"]:
+        logger.debug(f"Unsupported provider '{auth_config.provider}' for {app.name}, falling back to V1")
+        return await _check_artifact_v1_async(app, artifact_extension, version)
+
+    logger.info(f"V2 search for {app.name} with provider={auth_config.provider}, authMethod={auth_config.auth_method}")
     loop = asyncio.get_running_loop()
 
     try:
         searcher = await loop.run_in_executor(None, CloudAuthHelper.create_maven_searcher, app.registry, env_creds)
     except (ValueError, KeyError, ImportError) as e:
         logger.warning(f"Failed to create V2 searcher for {app.name}: {e}. Falling back to V1.")
+        return await _check_artifact_v1_async(app, artifact_extension, version)
+    except Exception as e:
+        logger.error(f"Unexpected error creating V2 searcher for {app.name}: {type(e).__name__}: {e}")
         return await _check_artifact_v1_async(app, artifact_extension, version)
     
     # Artifact class in common library expects: (artifact_id, version, extension='jar')
@@ -306,26 +322,52 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
     maven_artifact = MavenArtifact.from_string(artifact_string)
     maven_artifact.extension = artifact_extension.value
     
-    try:
-        urls = await loop.run_in_executor(None, partial(searcher.find_artifact_urls, artifact=maven_artifact))
-    except Exception as e:
-        logger.warning(f"V2 search failed for {app.name}: {e}. Falling back to V1.")
+    # Search and download with 401 retry logic (token refresh on unauthorized)
+    max_retries = 2  # Initial attempt + 1 retry after token refresh
+    last_error = None
+    
+    for attempt in range(max_retries):
+        try:
+            if attempt > 0:
+                logger.info(f"Retry attempt {attempt} for {app.name} - recreating searcher with fresh credentials")
+                # Recreate searcher to get fresh token
+                searcher = await loop.run_in_executor(None, CloudAuthHelper.create_maven_searcher, app.registry, env_creds)
+            
+            urls = await loop.run_in_executor(None, partial(searcher.find_artifact_urls, artifact=maven_artifact))
+            
+            if not urls:
+                logger.warning(f"No artifacts found for {app.artifact_id}:{version}")
+                return None
+
+            maven_relative_path = urls[0]
+            logger.info(f"Found V2 artifact at: {maven_relative_path}")
+
+            app_local_path = create_app_artifacts_local_path(app.name, version)
+            artifact_filename = os.path.basename(maven_relative_path)
+            local_path = os.path.join(app_local_path, artifact_filename)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+
+            await loop.run_in_executor(None, lambda: searcher.download_artifact(maven_relative_path, str(local_path)))
+            logger.info(f"V2 artifact downloaded to: {local_path}")
+            break  # Success - exit retry loop
+            
+        except Exception as e:
+            last_error = e
+            error_str = str(e).lower()
+            # Check for 401/unauthorized errors that warrant retry
+            if attempt < max_retries - 1 and ("401" in error_str or "unauthorized" in error_str or "forbidden" in error_str):
+                logger.warning(f"V2 search/download got auth error for {app.name}: {e}. Will retry with fresh token.")
+                continue
+            elif attempt < max_retries - 1:
+                logger.warning(f"V2 search/download failed for {app.name}: {e}. Retrying...")
+                continue
+            else:
+                logger.warning(f"V2 search/download failed after {max_retries} attempts for {app.name}: {e}. Falling back to V1.")
+                return await _check_artifact_v1_async(app, artifact_extension, version)
+    else:
+        # All retries exhausted
+        logger.warning(f"V2 search/download failed after {max_retries} attempts for {app.name}: {last_error}. Falling back to V1.")
         return await _check_artifact_v1_async(app, artifact_extension, version)
-
-    if not urls:
-        logger.warning(f"No artifacts found for {app.artifact_id}:{version}")
-        return None
-
-    maven_relative_path = urls[0]
-    logger.debug(f"Found artifact at: {maven_relative_path}")
-
-    app_local_path = create_app_artifacts_local_path(app.name, version)
-    artifact_filename = os.path.basename(maven_relative_path)
-    local_path = os.path.join(app_local_path, artifact_filename)
-    os.makedirs(os.path.dirname(local_path), exist_ok=True)
-
-    await loop.run_in_executor(None, lambda: searcher.download_artifact(maven_relative_path, str(local_path)))
-    logger.info(f"Downloaded to: {local_path}")
 
     # For AWS, construct full URL from resource ID
     # For GCP, Artifactory, Nexus: the search already returns full URLs

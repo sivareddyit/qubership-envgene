@@ -55,7 +55,7 @@ class MavenConfig(BaseSchema):
 
 
 class AuthConfig(BaseSchema):
-    credentials_id: str
+    credentials_id: Optional[str] = None
     auth_type: Optional[str] = None
     provider: Optional[str] = None
     auth_method: Optional[str] = None

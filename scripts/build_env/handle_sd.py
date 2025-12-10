@@ -93,8 +93,9 @@ def handle_deploy_postfix_namespace_transformation(sd_data: dict, namespace_dict
         - If userData contains ONLY field useDeployPostfixAsNamespace, remove userData.
         - If other keys exist, remove only useDeployPostfixAsNamespace.
     """
-    logger.info(
-        f"[Pre handle_deploy_postfix_namespace_transformation] Original SD data: {json.dumps(sd_data, indent=2)}")
+    # Log summary instead of full SD to avoid huge logs
+    app_count = len(sd_data.get("applications", []))
+    logger.info(f"[handle_deploy_postfix_namespace_transformation] Processing SD with {app_count} applications")
     user_data = sd_data.get("userData", {})
 
     if isinstance(user_data, dict) and user_data.get("useDeployPostfixAsNamespace") is True:
@@ -381,7 +382,20 @@ def download_sd_by_appver(
 ) -> dict[str, object]:
     if 'SNAPSHOT' in version:
         raise ValueError("SNAPSHOT is not supported version of Solution Descriptor artifacts")
+    
     app_def = get_appdef_for_app(f"{app_name}:{version}", app_name, plugins)
+    
+    # Log registry version for debugging
+    registry_version = getattr(app_def.registry, 'version', '1.0')
+    logger.info(f"Downloading SD for {app_name}:{version} using registry '{app_def.registry.name}' (version: {registry_version})")
+    
+    # Log if env_creds are available (for V2)
+    if env_creds:
+        cred_keys = list(env_creds.keys()) if isinstance(env_creds, dict) else []
+        logger.debug(f"env_creds available with keys: {cred_keys}")
+    else:
+        logger.debug("No env_creds provided - V1 flow will be used")
+    
     artifact_info = asyncio.run(
         artifact.check_artifact_async(app_def, artifact.FileExtension.JSON, version, env_creds)
     )
@@ -394,11 +408,14 @@ def download_sd_by_appver(
     # V2 artifacts are already downloaded locally - read from file
     if repo_marker == "v2_downloaded":
         local_path = extra_info
-        logger.info(f"Reading V2 downloaded SD from local path: {local_path}")
+        logger.info(f"Successfully retrieved V2 SD from local path: {local_path}")
         with open(local_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            sd_content = json.load(f)
+        logger.info(f"V2 SD loaded successfully for {app_name}:{version}")
+        return sd_content
 
     # V1 artifacts - download from URL
+    logger.info(f"Downloading V1 SD from URL: {sd_url}")
     return artifact.download_json_content(sd_url)
 
 
