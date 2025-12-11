@@ -348,7 +348,8 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
             # Add timeout to prevent indefinite hanging
-            download_timeout = DEFAULT_REQUEST_TIMEOUT * 4  # 120 seconds
+            # Set higher than searcher timeout (180s) to allow internal timeout to fire first with proper error
+            download_timeout = 200  # seconds
             logger.info(f"Starting V2 download with {download_timeout}s timeout to {local_path}")
             
             download_success = False
@@ -379,8 +380,8 @@ async def _check_artifact_v2_async(app: Application, artifact_extension: FileExt
                                 logger.info(f"Using fresh GCP OAuth token for direct download (token length: {len(access_token)})")
                     
                     logger.info(f"Making HTTP GET request...")
-                    # Use tuple timeout: (connect_timeout, read_timeout)
-                    response = requests.get(maven_relative_path, headers=auth_headers, timeout=(10, 60), stream=True)
+                    # Use tuple timeout: (connect_timeout, read_timeout) - generous read timeout for slow registries
+                    response = requests.get(maven_relative_path, headers=auth_headers, timeout=(30, 180), stream=True)
                     logger.info(f"HTTP response status: {response.status_code}")
                     response.raise_for_status()
                     

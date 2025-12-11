@@ -121,6 +121,9 @@ class CloudAuthHelper:
         logger.warning(f"Could not extract region from URL: {url}, using default")
         return "us-east-1"
 
+    # Default timeout for MavenArtifactSearcher: (connect_timeout, read_timeout)
+    DEFAULT_SEARCHER_TIMEOUT = (30, 180)  # 30s connect, 180s read
+
     @staticmethod
     def create_maven_searcher(registry: Registry, env_creds: Dict[str, dict]) -> 'MavenArtifactSearcher':
         if MavenArtifactSearcher is None:
@@ -136,7 +139,8 @@ class CloudAuthHelper:
         
         creds = CloudAuthHelper.resolve_credentials(auth_config, env_creds)
         registry_url = registry.maven_config.repository_domain_name
-        searcher = MavenArtifactSearcher(registry_url)
+        # Pass timeout to avoid indefinite hanging in requests.Session
+        searcher = MavenArtifactSearcher(registry_url, params={"timeout": CloudAuthHelper.DEFAULT_SEARCHER_TIMEOUT})
         
         if auth_config.provider == "aws":
             return CloudAuthHelper._configure_aws(searcher, auth_config, creds, registry_url)
