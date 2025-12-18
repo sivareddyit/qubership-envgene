@@ -3,9 +3,6 @@
   include_tasks: 01_prepare_template_testing.yaml
   when: env_template_test == 'true'
 
-- name: 02. prepare vars
-  include_tasks: 02_prepare_vars.yaml
-
 - name: 03. upload template
   include_tasks: 03_upload_template.yaml
 

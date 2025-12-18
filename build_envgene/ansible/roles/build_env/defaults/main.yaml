@@ -7,9 +7,6 @@ tenant_name: "template_testing_{{ lookup('env', 'CI_PROJECT_NAME') }}_{{ lookup(
 definition_env_name: "env-test"
 
 env_name: "{{ lookup('env', 'ENV_NAME') }}"
-cluster_name: "{{ lookup('env', 'CLUSTER_NAME') }}"
-environment_name: "{{ lookup('env', 'ENVIRONMENT_NAME') }}"
-base_dir: "{{ lookup('env', 'CI_PROJECT_DIR') }}"
 env_template_vers: "{{ lookup('env', 'ENV_TEMPLATE_VERSION') }}"
 env_template_vers_split: "{{ env_template_vers.replace('.', '_') }}"
 ggroup_id: "{{ lookup('env', 'GROUP_ID') }}"
@@ -19,13 +16,8 @@ env_group_id: "{{ lookup('env', 'GROUP_ID') }}"
 env_artifact_id: "{{ lookup('env', 'ARTIFACT_ID') }}"
 
 ### configuration files
-envs_directory_path:   "{{ base_dir }}/environments"
 env_definition_conf_path: "{{ base_dir }}/configuration/env_definition.yml"
 configs_conf_path: "{{ base_dir }}/configuration/config.yml"
-registry_config_path:  "{{ base_dir }}/configuration/registry.yml"
-cred_config_path:      "{{ base_dir }}/configuration/credentials/credentials.yml"
-
-instance_secret_key: "{{ lookup('env', 'SECRET_KEY') }}"
 
 ###build_env variables
 clusterExampleUrl: "{{ lookup('env', 'ansible_var_clusterExampleUrl') }}"
