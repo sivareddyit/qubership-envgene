@@ -1,7 +1,4 @@
 ### default paths
-artifact_dest: /tmp/artifact.zip
-dd_dest: /tmp/dd.json
-build_env_path: /build_env
 envgen_debug: "{{ lookup('env', 'envgen_debug') }}"
 tenant_name: "template_testing_{{ lookup('env', 'CI_PROJECT_NAME') }}_{{ lookup('env', 'ENV_NAME') }}"
 definition_env_name: "env-test"

@@ -395,7 +395,7 @@ class EnvGenerator:
             if template_name in profile_names:
                 self.render_from_file_to_file(template_path, self.get_rendered_target_path(template_path))
 
-    def generate_config_env(self, env_name: str, extra_env: dict):
+    def render_config_env(self, env_name: str, extra_env: dict):
         logger.info(f"Starting rendering environment {env_name}. Input params are:\n{dump_as_yaml_format(extra_env)}")
         with self.ctx.use():
             all_vars = dict(os.environ)

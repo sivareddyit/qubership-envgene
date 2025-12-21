@@ -1,3 +1,4 @@
+import os
 from os import path
 
 from .creds_helper import mask_sensitive
@@ -6,6 +7,14 @@ from dataclasses import dataclass, field
 from .business_helper import getEnvDefinitionPath, getEnvCredentialsPath, INV_GEN_CREDS_PATH
 from .yaml_helper import openYaml
 from .logger import logger
+
+
+def get_cluster_name():
+    return os.getenv("CLUSTER_NAME")
+
+
+def get_environment_name():
+    return os.getenv("ENVIRONMENT_NAME")
 
 
 @dataclass

@@ -43,13 +43,13 @@ def create_full_url(app: Application, version: str, repo: str, artifact_extensio
 
 
 async def resolve_snapshot_version_async(
-    session,
-    app: Application,
-    version: str,
-    repo_value: str,
-    stop_event: asyncio.Event,
-    classifier: str = "",
-    extension: FileExtension = FileExtension.JSON,
+        session,
+        app: Application,
+        version: str,
+        repo_value: str,
+        stop_event: asyncio.Event,
+        classifier: str = "",
+        extension: FileExtension = FileExtension.JSON,
 ) -> str | None:
     if stop_event.is_set():
         return None
@@ -107,8 +107,13 @@ def version_to_folder_name(version: str):
     return folder
 
 
-def download_json_content(url: str) -> dict[str, Any]:
-    response = requests.get(url, timeout=DEFAULT_REQUEST_TIMEOUT)
+# only nexus/artifactory auth
+def download_json_content(url: str, auth=None) -> dict[str, Any]:
+    response = requests.get(
+        url,
+        auth=auth,
+        timeout=DEFAULT_REQUEST_TIMEOUT
+    )
     response.raise_for_status()
     json_data = response.json()
     logger.debug(f"Got the json data by url {url}")
@@ -172,7 +177,7 @@ async def download(session, artifact_info: ArtifactInfo) -> ArtifactInfo:
 
 
 async def check_artifact_by_full_url_async(
-    app: Application, version: str, repo, artifact_extension: FileExtension, folder: str, stop_event, session
+        app: Application, version: str, repo, artifact_extension: FileExtension, folder: str, stop_event, session
 ) -> tuple[str, tuple[str, str]] | None:
     if stop_event.is_set():
         return None
@@ -210,7 +215,7 @@ def get_repo_pointer(repo_value: str, registry: Registry):
 
 
 async def _attempt_check(
-    app: Application, version: str, artifact_extension: FileExtension, registry_url: str | None = None
+        app: Application, version: str, artifact_extension: FileExtension, registry_url: str | None = None
 ) -> Optional[tuple[str, tuple[str, str]]]:
     """Helper function to attempt artifact check with a given registry URL"""
     folder = version_to_folder_name(version)
@@ -225,7 +230,8 @@ async def _attempt_check(
         resolved_version = version
         if version.endswith("-SNAPSHOT"):
             resolve_snapshot_coros = [
-                (resolve_snapshot_version_async(session, app, version, repo[0], resolve_snapshot_stop_event, extension=artifact_extension))
+                (resolve_snapshot_version_async(session, app, version, repo[0], resolve_snapshot_stop_event,
+                                                extension=artifact_extension))
                 for repo in repos_dict.items()
             ]
             async with asyncio.TaskGroup() as resolve_snapshot_tg:
@@ -255,7 +261,7 @@ async def _attempt_check(
 
 
 async def check_artifact_async(
-    app: Application, artifact_extension: FileExtension, version: str
+        app: Application, artifact_extension: FileExtension, version: str
 ) -> Optional[tuple[str, tuple[str, str]]] | None:
     """
     Resolves the full artifact URL and the first repository where it was found.
