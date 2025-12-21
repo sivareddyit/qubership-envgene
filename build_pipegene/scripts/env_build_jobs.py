@@ -11,9 +11,7 @@ def prepare_env_build_job(pipeline, is_template_test, env_template_version, full
   # adding update template version
   if env_template_version and env_template_version != "" and not is_template_test:
     script.append('/module/scripts/prepare.sh "set_template_version.yaml"')
-    script.append('/module/scripts/prepare.sh "build_env.yaml"')
-  else:
-    script.append('/module/scripts/prepare.sh "build_env.yaml"')
+    script.append('python3 /build_env/scripts/build_env/main.py')
 
   if is_template_test:
      script.append("env_name=$(cat set_variable.txt)")
@@ -51,9 +49,6 @@ def prepare_env_build_job(pipeline, is_template_test, env_template_version, full
       "envgen_image": "$envgen_image",
       "envgen_args": " -vvv",
       "envgen_debug": "true",
-      "module_ansible_dir": "/module/ansible",
-      "module_inventory": "${CI_PROJECT_DIR}/configuration/inventory.yaml",
-      "module_ansible_cfg": "/module/ansible/ansible.cfg",
       "module_config_default": "/module/templates/defaults.yaml",
       "GITLAB_RUNNER_TAG_NAME" : tags
   }
