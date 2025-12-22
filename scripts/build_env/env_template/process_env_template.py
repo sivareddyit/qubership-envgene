@@ -5,11 +5,11 @@ import asyncio
 
 from artifact_searcher.artifact import download_all_async
 from artifact_searcher.utils.models import FileExtension, ArtifactInfo
-from envgenehelper import crypt, openYaml, find_all_yaml_files_by_stem, fetch_cred_value, get_env_definition_path
+from envgenehelper import crypt, openYaml, find_all_yaml_files_by_stem, fetch_cred_value, get_env_definition_path, \
+    getenv_with_error
 from envgenehelper import logger
 from artifact_searcher import artifact
 from envgenehelper.config_helper import base_dir
-from envgenehelper.env_helper import get_environment_name, get_cluster_name
 from envgenehelper import get_env_definition
 
 
@@ -69,9 +69,12 @@ def fetch_env_template(dd_template, artifact_def, artifact_version) -> ArtifactI
 
 
 def process_env_template() -> str:
+    base_dir = getenv_with_error("CI_PROJECT_DIR")
     cred_config = crypt.decrypt_file(Path(f"{base_dir}/configuration/credentials/credentials.yml"))
     # template = Template(decrypted_creds)
-    env_instances_dir = Path(f"{base_dir}/environments/{get_cluster_name()}/{get_environment_name()}")
+    cluster_name = getenv_with_error("CLUSTER_NAME")
+    environment_name = getenv_with_error("ENVIRONMENT_NAME")
+    env_instances_dir = Path(f"{base_dir}/environments/{cluster_name}/{environment_name}")
     env_definition = get_env_definition(env_instances_dir)
 
     if 'artifact' in env_definition.get('envTemplate', {}):

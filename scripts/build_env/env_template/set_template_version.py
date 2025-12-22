@@ -2,8 +2,6 @@ from pathlib import Path
 
 from envgenehelper import beautifyYaml, writeYamlToFile, logger, getenv_with_error
 from envgenehelper import get_env_definition
-from envgenehelper.config_helper import base_dir
-from envgenehelper.env_helper import get_cluster_name, get_environment_name
 
 
 def update_version(env_definition_path, version_to_add):
@@ -34,6 +32,9 @@ def update_version(env_definition_path, version_to_add):
 
 
 if __name__ == "__main__":
-    env_instances_dir = Path(f"{base_dir}/environments/{get_cluster_name()}/{get_environment_name()}")
+    base_dir = getenv_with_error("CI_PROJECT_DIR")
+    cluster_name = getenv_with_error("CLUSTER_NAME")
+    environment_name = getenv_with_error("ENVIRONMENT_NAME")
+    env_instances_dir = Path(f"{base_dir}/environments/{cluster_name}/{environment_name}")
     version_to_add = getenv_with_error("ENV_TEMPLATE_VERSION")
     update_version(env_instances_dir, version_to_add)
