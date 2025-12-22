@@ -51,6 +51,8 @@ class MavenConfig(BaseSchema):
             self.is_nexus = False
 
         return self
+
+
 class DockerConfig(BaseSchema):
     snapshot_uri: Optional[str] = ""
     staging_uri: Optional[str] = ""
@@ -114,6 +116,7 @@ class Registry(BaseSchema):
     helm_app_config: Optional[HelmAppConfig] = None
 
 
+# artifact definition
 class Application(BaseSchema):
     name: str
     artifact_id: str
