@@ -3,7 +3,7 @@ from envgenehelper import *
 from build_env import build_env, process_additional_template_parameters
 from cloud_passport import update_env_definition_with_cloud_name
 from create_credentials import create_credentials
-from process_env_template import process_env_template
+from scripts.build_env.env_template.process_env_template import process_env_template
 from render_config_env import EnvGenerator
 from resource_profiles import get_env_specific_resource_profiles
 
