@@ -80,7 +80,7 @@ class Context(BaseModel):
 class EnvGenerator:
     def __init__(self):
         self.ctx = Context()
-        logger.debug(f"EnvGenerator initialized with context: {self.ctx.dict(exclude_none=True)}")
+        logger.debug("EnvGenerator initialized with context: %s", self.ctx.dict(exclude_none=True, exclude={"env_vars"}))
 
     def set_inventory(self):
         env_definition = getEnvDefinition(self.ctx.env_instances_dir)
@@ -130,19 +130,19 @@ class EnvGenerator:
             logger.info(f"Valid application: {app}")
 
     def validate_bgd(self):
-        logger.info(f'Validating that all namespaces mentioned in BG domain object are available in namespaces')
+        logger.info('Validating that all namespaces mentioned in BG domain object are available in namespaces')
         namespace_names = [ns.name for ns in get_namespaces()]
         bgd = get_bgd_object()
         mismatch = ""
         for k,v in bgd.items():
-            if not 'Namespace' in k:
+            if 'Namespace' not in k:
                 continue
             if v['name'] not in namespace_names:
-                mismatch += (f"\n{v['name']} from {k}")
+                mismatch += f"\n{v['name']} from {k}"
         if mismatch:
             logger.info(f'Available namespaces: {namespace_names}')
             raise ValueError(f'Next namespaces were not found in available namespaces: {mismatch}')
-        logger.info(f'Validation was successful')
+        logger.info('Validation was successful')
 
     def generate_ns_postfix(self, ns, ns_template_path) -> str:
         deploy_postfix = ns.get("deploy_postfix")
@@ -250,7 +250,7 @@ class EnvGenerator:
         target_path = f'{self.ctx.current_env_dir}/bg_domain.yml'
         template = self.ctx.current_env_template.get("bg_domain", None)
         if not template:
-            logger.info(f"'bg_domain' key not found in template descriptor, skipping bg domain rendering")
+            logger.info("'bg_domain' key not found in template descriptor, skipping bg domain rendering")
             return
         self.render_from_file_to_file(Template(template).render(self.ctx.as_dict()), target_path)
 
@@ -425,12 +425,8 @@ class EnvGenerator:
         logger.info(f"Starting rendering environment {env_name}. Input params are:\n{dump_as_yaml_format(extra_env)}")
         with self.ctx.use():
             all_vars = dict(os.environ)
-            ci_vars = {}
-            if "CI_COMMIT_TAG" in all_vars:
-                ci_vars["CI_COMMIT_TAG"] = all_vars["CI_COMMIT_TAG"]
-            ci_vars["CI_COMMIT_REF_NAME"] = all_vars.get("CI_COMMIT_REF_NAME")
             self.ctx.update(extra_env)
-            self.ctx.env_vars.update(ci_vars)
+            self.ctx.env_vars.update(all_vars)
             self.set_inventory()
             self.set_cloud_passport()
             self.generate_config()
