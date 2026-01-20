@@ -9,7 +9,7 @@
     "component": {
       "bom-ref": "qubership-integration-platform:03d26d59-0405-45a1-a259-bc09032351bf",
       "type": "application",
-      "mime-type": "application/vnd.qubership.application",
+      "mime-type": "application/vnd.nc.application",
       "name": "qubership-integration-platform",
       "version": "1.2.3"
     },
@@ -27,7 +27,7 @@
     {
       "bom-ref": "qubership-integration-platform:6dde3587-76a0-4369-8a9b-36c5c7b468be",
       "type": "application",
-      "mime-type": "application/vnd.qubership.standalone-runnable",
+      "mime-type": "application/vnd.nc.standalone-runnable",
       "name": "qubership-integration-platform",
       "properties": [],
       "components": []
@@ -35,7 +35,7 @@
     {
       "bom-ref": "qubership-integration-platform:7f17a6dc-b973-438f-abb7-e0c57a32afc5",
       "type": "application",
-      "mime-type": "application/vnd.qubership.helm.chart",
+      "mime-type": "application/vnd.nc.helm.chart",
       "name": "qubership-integration-platform",
       "version": "1.2.3",
       "properties": [
@@ -49,7 +49,7 @@
         {
           "bom-ref": "qubership-integration-platform:7f17a6dc-b973-438f-abb7-e0c57a32afc12",
           "type": "data",
-          "mime-type": "application/vnd.qubership.helm.values.schema",
+          "mime-type": "application/vnd.nc.helm.values.schema",
           "name": "values.schema.json",
           "data": [
             {
@@ -68,7 +68,7 @@
         {
           "bom-ref": "qip-engine:9010ea35-42e7-4a6f-93e4-2d63e7f9abf1",
           "type": "application",
-          "mime-type": "application/vnd.qubership.helm.chart",
+          "mime-type": "application/vnd.nc.helm.chart",
           "name": "qip-engine",
           "components": [],
           "properties": [
@@ -89,7 +89,7 @@
         {
           "bom-ref": "qip-runtime-catalog:9010ea35-42e7-4a6f-93e4-2d63e7f9abf2",
           "type": "application",
-          "mime-type": "application/vnd.qubership.helm.chart",
+          "mime-type": "application/vnd.nc.helm.chart",
           "name": "qip-runtime-catalog",
           "components": [],
           "properties": [
@@ -110,7 +110,7 @@
         {
           "bom-ref": "qip-design-time-catalog:9010ea35-42e7-4a6f-93e4-2d63e7f9abf3",
           "type": "application",
-          "mime-type": "application/vnd.qubership.helm.chart",
+          "mime-type": "application/vnd.nc.helm.chart",
           "name": "qip-design-time-catalog",
           "components": [],
           "properties": [
@@ -131,7 +131,7 @@
         {
           "bom-ref": "qip-variables-management:9010ea35-42e7-4a6f-93e4-2d63e7f9abf4",
           "type": "application",
-          "mime-type": "application/vnd.qubership.helm.chart",
+          "mime-type": "application/vnd.nc.helm.chart",
           "name": "qip-variables-management",
           "components": [],
           "properties": [
@@ -152,7 +152,7 @@
         {
           "bom-ref": "qip-sessions-management:9010ea35-42e7-4a6f-93e4-2d63e7f9abf5",
           "type": "application",
-          "mime-type": "application/vnd.qubership.helm.chart",
+          "mime-type": "application/vnd.nc.helm.chart",
           "name": "qip-sessions-management",
           "components": [],
           "properties": [
@@ -173,7 +173,7 @@
         {
           "bom-ref": "qubership-integration-ui:7f17a6dc-b973-438f-abb7-e0c57a32afc5",
           "type": "application",
-          "mime-type": "application/vnd.qubership.helm.chart",
+          "mime-type": "application/vnd.nc.helm.chart",
           "name": "qubership-integration-ui",
           "components": [],
           "properties": [
@@ -194,7 +194,7 @@
         {
           "bom-ref": "coretpl:13dac210-3424-4799-9631-667d7b2b0ed8",
           "type": "application",
-          "mime-type": "application/vnd.qubership.helm.chart",
+          "mime-type": "application/vnd.nc.helm.chart",
           "name": "coretpl",
           "components": [],
           "properties": [
@@ -207,7 +207,7 @@
         {
           "bom-ref": "resource-profile-baselines:61439a11-c00d-43f5-9bae-fe6db05db2d1",
           "type": "data",
-          "mime-type": "application/vnd.qubership.resource-profile-baseline",
+          "mime-type": "application/vnd.nc.resource-profile-baseline",
           "name": "resource-profile-baselines",
           "data": [
             {

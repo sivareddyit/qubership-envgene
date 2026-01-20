@@ -9,7 +9,7 @@
     "component": {
       "bom-ref": "qubership-jaeger:03d26d59-0405-45a1-a259-bc09032351bf",
       "type": "application",
-      "mime-type": "application/vnd.qubership.application",
+      "mime-type": "application/vnd.nc.application",
       "name": "qubership-jaeger",
       "version": "1.2.3"
     },
@@ -27,7 +27,7 @@
     {
       "bom-ref": "qubership-jaeger:61439aff-c00d-43f5-9bae-fe6db05db2d5",
       "type": "application",
-      "mime-type": "application/vnd.qubership.standalone-runnable",
+      "mime-type": "application/vnd.nc.standalone-runnable",
       "name": "qubership-jaeger",
       "version": "1.2.3",
       "properties": [],
@@ -36,7 +36,7 @@
     {
       "bom-ref": "qubership-jaeger:7f17a6dc-b973-438f-abb7-e0c57a32afc5",
       "type": "application",
-      "mime-type": "application/vnd.qubership.helm.chart",
+      "mime-type": "application/vnd.nc.helm.chart",
       "name": "qubership-jaeger",
       "version": "1.2.3",
       "properties": [
@@ -88,7 +88,7 @@
         {
           "bom-ref": "qubership-jaeger-values-schema:7f17a6dc-b973-438f-abb7-e0c57a32afc5",
           "type": "data",
-          "mime-type": "application/vnd.qubership.helm.values.schema",
+          "mime-type": "application/vnd.nc.helm.values.schema",
           "name": "values.schema.json",
           "data": [
             {
@@ -107,7 +107,7 @@
         {
           "bom-ref": "resource-profile-baselines:61439a11-c00d-43f5-9bae-fe6db05db2d5",
           "type": "data",
-          "mime-type": "application/vnd.qubership.resource-profile-baseline",
+          "mime-type": "application/vnd.nc.resource-profile-baseline",
           "name": "resource-profile-baselines",
           "data": [
             {
