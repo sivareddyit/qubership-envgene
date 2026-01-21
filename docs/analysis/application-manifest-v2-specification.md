@@ -217,32 +217,39 @@ The `components` array contains child component objects that form a hierarchical
 
 #### Application Components
 
+Application Components are components that aggregate and orchestrate components of other types (artifacts, data components, etc.) to form complete applications or application extensions.
+
 ##### `application/vnd.nc.standalone-runnable`
 
-An abstract component necessary to link artifacts of different types together
+Represents an application component that, after deployment to the cloud, runs continuously and remains operational for an extended period (e.g., web services, databases, message queues).
 
-- Standalone-runnable is at top-level in the `components` array
+**Location:**
+
+- Located at top-level in the `components` array
+
+**Characteristics:**
+
+- **Standalone**: The application is independent and self-contained, though it may have dependencies on other services (e.g., a web service may depend on a database)
+- **Runnable**: After deployment, the application starts and runs continuously in the cloud, providing persistent services
+
+**Dependencies:**
+
 - Relationships with Helm charts and Docker images are established through the `dependencies` array
 - One standalone-runnable can reference multiple Helm charts and Docker images through dependencies
+- Standalone-runnable `dependsOn` app-chart (if exists) or all service Helm charts (if no app-chart)
+- Standalone-runnable `dependsOn` all Docker images that are not associated with service Helm charts
 
-**Pattern**: Smartplug → Helm Chart → Docker image
+**Pattern**: Standalone-runnable → Helm Chart → Docker image
 
-| Attribute       | Type   | Mandatory | Default                                  | Description                                      |
-|-----------------|--------|-----------|------------------------------------------|--------------------------------------------------|
-| `type`          | string | yes       | `application`                            | Component type                                   |
-| `mime-type`     | string | yes       | `application/vnd.nc.standalone-runnable` | Component MIME type                              |
-| `bom-ref`       | string | yes       | None                                     | Unique component identifier within the AM        |
-| `name`          | string | yes       | None                                     | Component name                                   |
-| `version`       | string | yes       | None                                     | Component version                                |
-| `properties`    | array  | no        | `[]`                                     | Array of property objects. See Properties below  |
-| `components`    | array  | yes       | `[]`                                     | Always `[]`                                      |
-
-**Properties:**
-
-| Property Name                     | Type   | Mandatory | Description                                                                          |
-|-----------------------------------|--------|-----------|--------------------------------------------------------------------------------------|
-| `nc:dd:metadata:descriptorFormat` | string | No        | DD metadata descriptor format version. Preserved from `DD.metadata.descriptorFormat` |
-| `nc:dd:metadata:builderVersion`   | string | No        | DD metadata builder version. Preserved from `DD.metadata.builderVersion`             |
+| Attribute       | Type   | Mandatory | Default                                  | Description                               |
+|-----------------|--------|-----------|------------------------------------------|-------------------------------------------|
+| `type`          | string | yes       | `application`                            | Component type                            |
+| `mime-type`     | string | yes       | `application/vnd.nc.standalone-runnable` | Component MIME type                       |
+| `bom-ref`       | string | yes       | None                                     | Unique component identifier within the AM |
+| `name`          | string | yes       | None                                     | Component name                            |
+| `version`       | string | yes       | None                                     | Component version                         |
+| `properties`    | array  | no        | `[]`                                     | Always `[]`                               |
+| `components`    | array  | yes       | `[]`                                     | Always `[]`                               |
 
 ```json
 {
@@ -267,11 +274,21 @@ An abstract component necessary to link artifacts of different types together
 
 ##### `application/vnd.nc.smartplug`
 
-**TBD**
+Represents an application extension component that extends the functionality of a core Java application through pluggable Java code extensions. The extension is applied to the core application
 
-- Smartplug is at top-level in the `components` array
+**Location:**
+
+- Located at top-level in the `components` array
+
+**Characteristics:**
+
+- **Not Standalone**: The extension depends on a core Java application that provides extension points
+- **Not Runnable**: After the extension is applied to the core application, it does not run independently in the cloud; it becomes part of the core application
+
+**Dependencies:**
+
 - Relationships with Helm charts and JAR artifacts are established through the `dependencies` array
-- Smartplug references a Helm chart, which in turn references a JAR artifact
+- Smartplug `dependsOn` Helm chart, which `dependsOn` JAR artifact
 
 **Pattern**: Smartplug → Helm Chart → JAR
 
@@ -299,11 +316,21 @@ An abstract component necessary to link artifacts of different types together
 
 ##### `application/vnd.nc.samplerepo`
 
-**TBD**
+Represents a configuration application component that applies configuration to an existing application.
 
-- Samplerepo is at top-level in the `components` array
+**Location:**
+
+- Located at top-level in the `components` array
+
+**Characteristics:**
+
+- **Not Standalone**: The configuration depends on the application it configures
+- **Not Runnable**: After the configuration is applied, it does not run independently in the cloud; it modifies the target application's configuration
+
+**Dependencies:**
+
 - Relationships with Helm charts and ZIP artifacts are established through the `dependencies` array
-- Samplerepo references a Helm chart, which in turn references a ZIP artifact
+- Samplerepo `dependsOn` Helm chart, which `dependsOn` ZIP artifact
 
 **Pattern**: Samplerepo → Helm Chart → ZIP
 
@@ -333,11 +360,17 @@ An abstract component necessary to link artifacts of different types together
 
 ##### `application/vnd.nc.cdn`
 
-**TBD**
+Represents a CDN application component that uses ZIP-based artifacts for content delivery.
 
-- CDN is at top-level in the `components` array
+**Location:**
+
+- Located at top-level in the `components` array
+
+**Dependencies:**
+
 - Relationships with Helm charts and ZIP artifacts are established through the `dependencies` array
 - CDN references a Helm chart, which in turn references a ZIP artifact
+- CDN `dependsOn` Helm chart, which `dependsOn` ZIP artifact
 
 **Pattern**: CDN → Helm Chart → ZIP
 
@@ -365,11 +398,16 @@ An abstract component necessary to link artifacts of different types together
 
 ##### `application/vnd.nc.crd`
 
-**TBD**
+Represents a Custom Resource Definition (CRD) application component that defines Kubernetes custom resources.
 
-- CRD is at top-level in the `components` array
+**Location:**
+
+- Located at top-level in the `components` array
+
+**Dependencies:**
+
 - Relationships with Helm charts are established through the `dependencies` array
-- CRD typically references a Helm chart that contains the CRD definitions
+- CRD `dependsOn` Helm chart containing CRD definitions
 
 **Pattern**: CRD → Helm Chart
 
@@ -397,11 +435,16 @@ An abstract component necessary to link artifacts of different types together
 
 ##### `application/vnd.nc.job`
 
-Описывает приложение, который представляет собой задачу, выполняемую однократно в кластере (например, миграции, инициализация данных)
+Represents a Kubernetes Job application component that executes a one-time task in the cluster (e.g., migrations, data initialization).
 
-- Job is at top-level in the `components` array
+**Location:**
+
+- Located at top-level in the `components` array
+
+**Dependencies:**
+
 - Relationships with Helm charts and Docker images are established through the `dependencies` array
-- Job typically references a Helm chart, which in turn references a Docker image containing the job logic
+- Job `dependsOn` Helm chart, which `dependsOn` Docker image
 
 **Pattern**: Job → Helm Chart → Docker Image
 
@@ -431,10 +474,17 @@ An abstract component necessary to link artifacts of different types together
 
 ##### `application/vnd.docker.image`
 
-Describes a Docker image artifact
+Represents a Docker image artifact that contains containerized application code.
 
-- `application/vnd.docker.image` is at top-level in the `components` array
-- Relationships with `application/vnd.nc.helm.chart` are established through the `dependencies` array (Helm chart `dependsOn` Docker image)
+**Location:**
+
+- Located at top-level in the `components` array
+
+**Dependencies:**
+
+- Relationships with `application/vnd.nc.helm.chart` are established through the `dependencies` array
+- Service Helm charts `dependsOn` corresponding Docker images
+- If app-chart exists, app-chart `dependsOn` all Docker images that are not associated with service Helm charts
 - Uses PURL for identification
 
 | Attribute       | Type   | Mandatory | Default                        | Description                                                |
@@ -454,22 +504,27 @@ Describes a Docker image artifact
 
 **Properties:**
 
-| Property Name             | Type    | Mandatory | Description                                                                                                                                                          |
-|---------------------------|---------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nc:dd:image_type`        | string  | No        | Service type. Value `service` for Docker images associated with service Helm charts, `image` for standalone Docker images. Preserved from `DD.services[].image_type` |
-| `nc:dd:service_name`      | string  | No        | Service name. Preserved from `DD.services[].service_name`                                                                                                            |
-| `nc:dd:version`           | string  | No        | Service version. Preserved from `DD.services[].version`                                                                                                              |
-| `nc:dd:docker_registry`   | string  | No        | Docker registry URL. Preserved from `DD.services[].docker_registry`                                                                                                  |
-| `nc:dd:full_image_name`   | string  | No        | Full Docker image reference. Preserved from `DD.services[].full_image_name`                                                                                          |
-| `nc:dd:deploy_param`      | string  | No        | Deployment parameters for standalone Docker images. Preserved from `DD.services[].deploy_param`                                                                      |
-| `nc:dd:git_url`           | string  | No        | Git repository URL. Preserved from `DD.services[].git_url`                                                                                                           |
-| `nc:dd:git_branch`        | string  | No        | Git branch name. Preserved from `DD.services[].git_branch`                                                                                                           |
-| `nc:dd:git_revision`      | string  | No        | Git commit revision. Preserved from `DD.services[].git_revision`                                                                                                     |
-| `nc:dd:qualifier`         | string  | No        | Chart qualifier. Preserved from `DD.services[].qualifier`                                                                                                            |
-| `nc:dd:build_id_dtrust`   | string  | No        | Build ID from DTrust. Preserved from `DD.services[].build_id_dtrust`                                                                                                 |
-| `nc:dd:promote_artifacts` | boolean | No        | Promote artifacts flag. Preserved from `DD.services[].promote_artifacts`                                                                                             |
+| Property Name                 | Type    | Mandatory | Description                                                                                                                                                          |
+|-------------------------------|---------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nc:dd:image_type`            | string  | No        | Service type. Value `service` for Docker images associated with service Helm charts, `image` for standalone Docker images. Preserved from `DD.services[].image_type` |
+| `nc:dd:service_name`          | string  | No        | Service name. Preserved from `DD.services[].service_name`                                                                                                            |
+| `nc:dd:version`               | string  | No        | Service version. Preserved from `DD.services[].version`                                                                                                              |
+| `nc:dd:docker_registry`       | string  | No        | Docker registry URL. Preserved from `DD.services[].docker_registry`                                                                                                  |
+| `nc:dd:docker_repository_name`| string  | No        | Repository/group name. Preserved from `DD.services[].docker_repository_name`                                                                                         |
+| `nc:dd:docker_tag`            | string  | No        | Docker image tag. Preserved from `DD.services[].docker_tag`                                                                                                          |
+| `nc:dd:docker_digest`         | string  | No        | Docker image digest. Preserved from `DD.services[].docker_digest`                                                                                                    |
+| `nc:dd:full_image_name`       | string  | No        | Full Docker image reference. Preserved from `DD.services[].full_image_name`                                                                                          |
+| `nc:dd:deploy_param`          | string  | No        | Deployment parameters for standalone Docker images. Preserved from `DD.services[].deploy_param`                                                                      |
+| `nc:dd:git_url`               | string  | No        | Git repository URL. Preserved from `DD.services[].git_url`                                                                                                           |
+| `nc:dd:git_branch`            | string  | No        | Git branch name. Preserved from `DD.services[].git_branch`                                                                                                           |
+| `nc:dd:git_revision`          | string  | No        | Git commit revision. Preserved from `DD.services[].git_revision`                                                                                                     |
+| `nc:dd:qualifier`             | string  | No        | Chart qualifier. Preserved from `DD.services[].qualifier`                                                                                                            |
+| `nc:dd:build_id_dtrust`       | string  | No        | Build ID from DTrust. Preserved from `DD.services[].build_id_dtrust`                                                                                                 |
+| `nc:dd:promote_artifacts`     | boolean | No        | Promote artifacts flag. Preserved from `DD.services[].promote_artifacts`                                                                                             |
+| `nc:dd:includeFrom`           | string  | No        | Source descriptor reference. Preserved from `DD.services[].includeFrom`                                                                                              |
 
-**Note:** Any additional attributes from `DD.services[]` are also preserved with the same prefix pattern `nc:dd:<attribute-name>`.
+> [!NOTE]
+> The list above is an example set of commonly seen DD attributes. All attributes from `DD.services[]` are copied as-is with prefix `nc:dd:<attribute-name>`, so the exact set depends on the source DD.
 
 ```json
 {
@@ -504,20 +559,19 @@ Describes a Docker image artifact
 
 ##### `application/vnd.nc.helm.chart`
 
-Describes a Helm chart artifact. Helm charts can be app-charts (umbrella charts) or service charts.
+Represents a Helm chart, which can either be an umbrella (app-chart) chart that nests other charts or a standalone (service) chart without nested charts.
 
-**App-chart (Umbrella Chart):**
+**App-chart:**
 
 - App-chart is an umbrella chart that physically contains service Helm charts as child components
-- Service Helm charts from `DD.services[]` with `image_type: "service"` are placed in the app-chart's `components` array
 - This represents the physical structure where the umbrella chart artifact contains sub-charts
-- App-chart is identified by property `nc:dd:type = "app-chart"`
+- Located is at top-level in the `components` array
 
 **Service Helm Charts:**
 
 - Service Helm charts are child components of app-chart (if app-chart exists) via `components` array
 - Linked to Docker images through the `dependencies` array (Helm chart `dependsOn` Docker image)
-- If no app-chart exists, service Helm charts are at the top level in the root `components` array
+- If no app-chart exists, service Helm charts are at top-level in the `components` array
 
 **Child Components:**
 
@@ -536,45 +590,48 @@ Describes a Helm chart artifact. Helm charts can be app-charts (umbrella charts)
 
 Root components of this type describe Helm Chart artifact, nested helm charts describe abstract helm charts (this is necessary to properly form values.yaml)
 
-| Attribute             | Type    | Mandatory | Default                                  | Description                                                                 |
-|-----------------------|---------|-----------|------------------------------------------|-----------------------------------------------------------------------------|
-| `type`                | string  | yes       | `application`                            | Component type                                                              |
-| `mime-type`           | string  | yes       | `application/vnd.nc.helm.chart`          | Component MIME type                                                         |
-| `bom-ref`             | string  | yes       | None                                     | Unique component identifier within the AM                                   |
-| `name`                | string  | yes       | None                                     | Helm chart name                                                             |
-| `version`             | string  | yes       | None                                     | Helm chart version                                                          |
-| `purl`                | string  | no        | None                                     | Package URL (PURL) for the chart                                            |
-| `hashes`              | array   | no        | None                                     | List of hashes for the chart (empty array if none)                          |
-| `hashes.alg`          | string  | yes       | None                                     | Hash algorithm, e.g., "SHA-256" (required if hash present)                  |
-| `hashes.content`      | string  | yes       | None                                     | Hash value as a hex string (required if hash present)                       |
-| `properties`          | array   | yes       | None                                     | List of additional properties. See Properties below                         |
-| `components`          | array   | no        | `[]`                                     | Nested components. See Components below                                     |
+| Attribute             | Type    | Mandatory | Default                         | Description                                                |
+|-----------------------|---------|-----------|---------------------------------|------------------------------------------------------------|
+| `type`                | string  | yes       | `application`                   | Component type                                             |
+| `mime-type`           | string  | yes       | `application/vnd.nc.helm.chart` | Component MIME type                                        |
+| `bom-ref`             | string  | yes       | None                            | Unique component identifier within the AM                  |
+| `name`                | string  | yes       | None                            | Helm chart name                                            |
+| `version`             | string  | yes       | None                            | Helm chart version                                         |
+| `purl`                | string  | no        | None                            | Package URL (PURL) for the chart                           |
+| `hashes`              | array   | no        | None                            | List of hashes for the chart (empty array if none)         |
+| `hashes.alg`          | string  | yes       | None                            | Hash algorithm, e.g., "SHA-256" (required if hash present) |
+| `hashes.content`      | string  | yes       | None                            | Hash value as a hex string (required if hash present)      |
+| `properties`          | array   | yes       | None                            | List of additional properties. See Properties below        |
+| `components`          | array   | no        | `[]`                            | Nested components. See Components below                    |
 
 **Components:**
 
-| Child Component       | Type    | Mandatory | Default                                  | Description                                                                 |
-|-----------------------|---------|-----------|------------------------------------------|-----------------------------------------------------------------------------|
-| `components[0]`       | object  | no        | None                                     | Child `application/vnd.nc.helm.values.schema` component                     |
-| `components[1]`       | object  | no        | None                                     | Child `application/vnd.nc.resource-profile-baseline` component              |
-| `components[n]`       | object  | no        | None                                     | Child `application/vnd.nc.helm.chart` component                             |
+| Child Component       | Type    | Mandatory | Default | Description                                                    |
+|-----------------------|---------|-----------|---------|----------------------------------------------------------------|
+| `components[0]`       | object  | no        | None    | Child `application/vnd.nc.helm.values.schema` component        |
+| `components[1]`       | object  | no        | None    | Child `application/vnd.nc.resource-profile-baseline` component |
+| `components[n]`       | object  | no        | None    | Child `application/vnd.nc.helm.chart` component                |
 
 **Properties:**
 
-| Property Name                            | Type    | Mandatory | Description                                                                                                                                                                                        |
-|------------------------------------------|---------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `isLibrary`                              | boolean | Yes       | Indicates if the chart is a library chart. Value `true` for library charts, `false` for application charts                                                                                         |
-| `nc:helm.values.artifactMappings`        | object  | No        | Maps Docker image bom-refs to Helm values paths. Used to specify how Docker images should be referenced in Helm chart values. See [nc:helm.values.artifactMappings](#nchelmvaluesartifactmappings) |
-| `nc:dd:type`                             | string  | No        | Chart type. Value `"app-chart"` for app-chart (umbrella chart) components. Preserved from `DD.charts[].type`                                                                                       |
-| `nc:dd:helm_registry`                    | string  | No        | Helm registry URL. Preserved from `DD.charts[].helm_registry`                                                                                                                                      |
-| `nc:dd:full_chart_name`                  | string  | No        | Full Helm chart reference. Preserved from `DD.charts[].full_chart_name`                                                                                                                            |
-| `nc:dd:qualifier`                        | string  | No        | Chart qualifier. Preserved from `DD.charts[].qualifier`                                                                                                                                            |
-| `nc:dd:version`                          | string  | No        | Chart version. Preserved from `DD.charts[].version`                                                                                                                                                |
-| `nc:dd:git_url`                          | string  | No        | Git repository URL. Preserved from `DD.charts[].git_url`                                                                                                                                           |
-| `nc:dd:git_branch`                       | string  | No        | Git branch name. Preserved from `DD.charts[].git_branch`                                                                                                                                           |
-| `nc:dd:git_revision`                     | string  | No        | Git commit revision. Preserved from `DD.charts[].git_revision`                                                                                                                                     |
-| `nc:dd:promote_artifacts`                | boolean | No        | Promote artifacts flag. Preserved from `DD.charts[].promote_artifacts`                                                                                                                             |
+| Property Name                            | Type    | Mandatory | Description                                                                                                                                                              |
+|------------------------------------------|---------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `isLibrary`                              | boolean | Yes       | Indicates if the chart is a library chart. Value `true` for library charts, `false` for application charts                                                               |
+| `nc:helm.values.artifactMappings`        | object  | No        | Maps Docker image bom-refs to Helm values paths. Used to specify how Docker images should be referenced in Helm chart values. See nc:helm.values.artifactMappings bellow |
+| `nc:dd:type`                             | string  | No        | Chart type. Value `"app-chart"` for app-chart (umbrella chart) components. Preserved from `DD.charts[].type`                                                             |
+| `nc:dd:helm_chart_name`                  | string  | No        | Helm chart name. Preserved from `DD.charts[].helm_chart_name` (if provided)                                                                                              |
+| `nc:dd:helm_chart_version`               | string  | No        | Helm chart version from DD. Preserved from `DD.charts[].helm_chart_version`                                                                                              |
+| `nc:dd:helm_registry`                    | string  | No        | Helm registry URL. Preserved from `DD.charts[].helm_registry`                                                                                                            |
+| `nc:dd:full_chart_name`                  | string  | No        | Full Helm chart reference. Preserved from `DD.charts[].full_chart_name`                                                                                                  |
+| `nc:dd:qualifier`                        | string  | No        | Chart qualifier. Preserved from `DD.charts[].qualifier`                                                                                                                  |
+| `nc:dd:version`                          | string  | No        | Chart version. Preserved from `DD.charts[].version`                                                                                                                      |
+| `nc:dd:git_url`                          | string  | No        | Git repository URL. Preserved from `DD.charts[].git_url`                                                                                                                 |
+| `nc:dd:git_branch`                       | string  | No        | Git branch name. Preserved from `DD.charts[].git_branch`                                                                                                                 |
+| `nc:dd:git_revision`                     | string  | No        | Git commit revision. Preserved from `DD.charts[].git_revision`                                                                                                           |
+| `nc:dd:promote_artifacts`                | boolean | No        | Promote artifacts flag. Preserved from `DD.charts[].promote_artifacts`                                                                                                   |
 
-**Note:** For app-chart (umbrella chart), all service Helm charts from `DD.services[]` with `image_type: "service"` become child components in the `components` array. This represents the physical structure where the umbrella chart contains sub-charts.
+> [!NOTE]
+> The list above is an example set of commonly seen DD chart attributes. All attributes from `DD.charts[]` are copied as-is with prefix `nc:dd:<attribute-name>`, so the exact set depends on the source DD.
 
 ```json
 {
@@ -614,7 +671,7 @@ Root components of this type describe Helm Chart artifact, nested helm charts de
 
 **nc:helm.values.artifactMappings:**
 
-This property maps Docker images to Helm values paths. It is used to specify how Docker images should be referenced in Helm chart values
+[`nc:helm.values.artifactMappings`](/docs/analysis/application-manifest-build-cli.md#artifactmappings-processing) maps Docker images to Helm values paths. It is used to specify how Docker images should be referenced in Helm chart values.
 
 ```json
 {
@@ -636,23 +693,36 @@ This property maps Docker images to Helm values paths. It is used to specify how
 
 ##### `application/zip`
 
-TBD
+Represents a ZIP archive artifact that contains application files or resources packaged in a compressed format.
+
+**Dependencies:**
+
+- Relationships with Helm charts are established through the `dependencies` array
+- Helm chart `dependsOn` ZIP artifact
+- Used by Samplerepo and CDN application components
+
+**Pattern**: Application → Helm Chart → ZIP
 
 ##### `application/java-archive`
 
-TBD
+Represents a Java Archive (JAR) artifact that contains compiled Java classes and resources.
+
+**Dependencies:**
+
+- Relationships with Helm charts are established through the `dependencies` array
+- Helm chart `dependsOn` JAR artifact
+
+**Pattern**: Smartplug → Helm Chart → JAR
 
 #### Data Components
 
 ##### `application/vnd.nc.helm.values.schema`
 
-Describes JSON Schema for Helm chart values embedded as data entries
+Represents a JSON Schema for Helm chart values that defines the structure and validation rules for chart values.
+
+**Location:**
 
 - Appears as a child component in a `application/vnd.nc.helm.chart`'s `components` array
-- Schema content is base64-encoded in the attachment
-- Content type is `application/json`
-- The schema is optional for a chart
-- The schema is located at `charts/<chart-name>/values.schema.json` in the chart artifact, at the same level as `Chart.yaml`
 
 | Attribute                                 | Type   | Mandatory | Default                                 | Description                               |
 |-------------------------------------------|--------|-----------|-----------------------------------------|-------------------------------------------|
@@ -693,16 +763,11 @@ Describes JSON Schema for Helm chart values embedded as data entries
 
 ##### `application/vnd.nc.resource-profile-baseline`
 
-Describes Resource Profile Baselines for different environments
+Represents Resource Profile Baselines for different environments that define resource configurations for various deployment scenarios.
+
+**Location:**
 
 - Appears as a child component in a `application/vnd.nc.helm.chart`'s `components` array
-- Profile content is base64-encoded in the attachment
-- Content type is `application/yaml` or `application/json`
-- Can contain multiple profile files (dev.yaml, prod.yaml, etc.)
-- The resource profile baselines are located at `charts/<chart-name>/resource-profiles/` in the chart artifact, at the same level as `Chart.yaml`
-- Any `yaml` or `json` file located in this folder is considered a resource profile
-- The structure of resource profile baselines is not specified; any valid `yaml` or `json` file is considered a valid resource profile
-- The resource profile baselines are optional; if no baselines exist at this path, the component is not added
 
 | Attribute                                 | Type   | Mandatory | Default                                        | Description                                                  |
 |-------------------------------------------|--------|-----------|------------------------------------------------|--------------------------------------------------------------|
@@ -752,21 +817,6 @@ Describes Resource Profile Baselines for different environments
 }
 ```
 
-| Attribute                                 | Type   | Mandatory | Default                                        | Description                                                  |
-|-------------------------------------------|--------|-----------|------------------------------------------------|--------------------------------------------------------------|
-| `bom-ref`                                 | string | yes       | None                                           | Unique component identifier within the AM                    |
-| `type`                                    | string | yes       | `data`                                         | Component type                                               |
-| `mime-type`                               | string | yes       | `application/vnd.nc.resource-profile-baseline` | Component MIME type                                          |
-| `name`                                    | string | yes       | `resource-profile-baselines`                   | Logical name of the bundle                                   |
-| `data`                                    | array  | yes       | None                                           | List of configuration entries (see below)                    |
-| `data[0].type`                            | string | yes       | `configuration`                                | Entry type                                                   |
-| `data[0].name`                            | string | yes       | None                                           | Filename of the baseline, e.g. `small.yaml`, `dev.yaml`      |
-| `data[0].contents`                        | object | yes       | None                                           | Wrapper for the attachment                                   |
-| `data[0].contents.attachment`             | object | yes       | None                                           | Embedded file payload                                        |
-| `data[0].contents.attachment.contentType` | string | yes       | None                                           | MIME of payload, e.g. `application/yaml`, `application/json` |
-| `data[0].contents.attachment.encoding`    | string | yes       | `base64`                                       | Encoding of the payload                                      |
-| `data[0].contents.attachment.content`     | string | yes       | None                                           | Base64-encoded file contents                                 |
-
 ## Dependencies
 
 The `dependencies` array describes relationships between components using `bom-ref` identifiers.
@@ -805,7 +855,7 @@ Dependencies describe relationships between components:
 ## Validation Rules
 
 1. **CycloneDX Compliance**: AMv2 must conform to CycloneDX 1.6 specification
-2. **JSON Schema Validation**: AMv2 must be validatable against its JSON Schema
+2. **JSON Schema Validation**: AMv2 must be valid according to [JSON Schema](/schemas/application-manifest-v2.schema.json)
 3. **Unique bom-ref**: All `bom-ref` values must be unique within the BOM
 4. **Dependency References**: All references in `dependencies` must correspond to existing `bom-ref` values
 5. **Required Fields**: All mandatory fields must be present
