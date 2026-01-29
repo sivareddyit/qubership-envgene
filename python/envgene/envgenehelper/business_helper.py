@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
+from enum import Enum
 import re
 from os import getenv
 from pathlib import Path
 from typing import overload
+from functools import cache
 
 from ruyaml import CommentedMap
 
@@ -159,7 +161,8 @@ def getTemplateArtifactName(env_definition_yaml):
         return gav["artifact_id"]
 
 
-def getEnvDefinition(env_dir):
+def getEnvDefinition(env_dir = None):
+    env_dir = env_dir or get_current_env_dir_from_env_vars()
     env_definition_path = getEnvDefinitionPath(env_dir)
     if not check_file_exists(env_definition_path):
         raise ReferenceError(f"Environment definition for env {env_dir} is not found in {env_definition_path}")
@@ -360,15 +363,35 @@ def find_cloud_name_from_passport(source_env_dir, all_instances_dir):
     else:
         return ""
 
+class NamespaceRole(Enum):
+    COMMON = 1
+    ORIGIN = 2
+    PEER = 3
+
+def get_namespace_role(ns_name: str, bgd_object: dict | None = None) -> NamespaceRole:
+    if not bgd_object:
+        bgd_object = get_bgd_object()
+    if not bgd_object:
+        return NamespaceRole.COMMON
+    if bgd_object['originNamespace']['name'] == ns_name:
+        return NamespaceRole.ORIGIN
+    if bgd_object['peerNamespace']['name'] == ns_name:
+        return NamespaceRole.PEER
+    return NamespaceRole.COMMON
+
 @dataclass
 class NamespaceFile:
     path: Path
     name: str = field(init=False)
+    postfix: str = field(init=False)
     definition_path: Path = field(init=False)
+    role: NamespaceRole = field(init=False)
 
     def __post_init__(self):
         self.definition_path = self.path.joinpath('namespace.yml')
         self.name = openYaml(self.definition_path)['name']
+        self.postfix = self.path.name
+        self.role = get_namespace_role(self.name)
 
 def get_namespaces_path(env_dir: Path | None = None) -> Path:
     env_dir = env_dir or get_current_env_dir_from_env_vars()
@@ -391,9 +414,9 @@ def get_bgd_path(env_dir: Path | None = None) -> Path:
     logger.debug(bgd_path)
     return bgd_path
 
+@cache
 def get_bgd_object(env_dir: Path | None = None) -> CommentedMap:
     bgd_path = get_bgd_path(env_dir)
     bgd_object = openYaml(bgd_path, allow_default=True)
     logger.debug(bgd_object)
     return bgd_object
-
