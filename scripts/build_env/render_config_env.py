@@ -25,13 +25,16 @@ class Context(BaseModel):
     env: Optional[str] = ''
     render_dir: Optional[str] = ''
     cloud_passport: OrderedDict = Field(default_factory=OrderedDict)
-    templates_dir: Optional[Path] = None
+    templates_dir: Optional[Path] = None  # backward compatibility - points to common template
+    templates_dirs: dict = Field(default_factory=dict)  # dict of template dirs: {'common': path, 'peer': path, 'origin': path}
     output_dir: Optional[str] = ''
     cluster_name: Optional[str] = ''
     env_definition: OrderedDict = Field(default_factory=OrderedDict)
     current_env: OrderedDict = Field(default_factory=OrderedDict)
     current_env_dir: Optional[str] = ''
     current_env_template: OrderedDict = Field(default_factory=OrderedDict)
+    peer_env_template: OrderedDict = Field(default_factory=OrderedDict)
+    origin_env_template: OrderedDict = Field(default_factory=OrderedDict)
     tenant: Optional[str] = ''
     env_template: OrderedDict = Field(default_factory=OrderedDict)
     env_instances_dir: Optional[str] = ''
@@ -106,15 +109,46 @@ class EnvGenerator:
         logger.info(f"config = {config}")
         self.ctx.config = config
 
-    def set_env_template(self):
-        env_template_path_stem = f'{self.ctx.templates_dir}/env_templates/{self.ctx.current_env["env_template"]}'
+    def find_env_template_in_dir(self, template_dir, env_template_name):
+        """Find and load env template file from a template directory.
+
+        Args:
+            template_dir: Path to template directory (e.g. common_template, peer_template)
+            env_template_name: Name of the env template to find
+
+        Returns:
+            Loaded env template dict if found, None otherwise
+        """
+        if not template_dir:
+            return None
+        env_template_path_stem = f'{template_dir}/env_templates/{env_template_name}'
         env_template_path = next(iter(find_all_yaml_files_by_stem(env_template_path_stem)), None)
         if not env_template_path:
-            raise ValueError(f'Template descriptor was not found in {env_template_path_stem}')
-
+            return None
         env_template = openYaml(filePath=env_template_path, safe_load=True)
+        logger.info(f"Loaded env_template from {env_template_path}")
+        return env_template
+
+    def set_env_template(self):
+        env_template_name = self.ctx.current_env["env_template"]
+
+        # Common template is required
+        env_template_path_stem = f'{self.ctx.templates_dir}/env_templates/{env_template_name}'
+        env_template = self.find_env_template_in_dir(self.ctx.templates_dir, env_template_name)
+        if not env_template:
+            raise ValueError(f'Template descriptor was not found in {env_template_path_stem}')
         logger.info(f"env_template = {env_template}")
         self.ctx.current_env_template = env_template
+
+        # Peer and origin templates are optional
+        if self.ctx.templates_dirs:
+            peer_template = self.find_env_template_in_dir(self.ctx.templates_dirs.get('peer'), env_template_name)
+            if peer_template:
+                self.ctx.peer_env_template = peer_template
+
+            origin_template = self.find_env_template_in_dir(self.ctx.templates_dirs.get('origin'), env_template_name)
+            if origin_template:
+                self.ctx.origin_env_template = origin_template
         
     def setup_base_context(self, extra_env: dict):
         all_vars = dict(os.environ)

@@ -20,7 +20,9 @@ test_data = [
 ]
 
 base_dir = Path(__file__).resolve().parents[4]
-g_templates_dir = str((base_dir / "test_data/test_templates").resolve())
+g_templates_dirs = {
+    'common': str((base_dir / "test_data/test_templates").resolve())
+}
 g_inventory_dir = str((base_dir / "test_data/test_environments").resolve())
 g_output_dir = str((base_dir / "/tmp/test_environments").resolve())
 g_base_dir = get_parent_dir_for_dir(g_inventory_dir)
@@ -37,7 +39,7 @@ def change_test_dir(monkeypatch):
 def test_render_envs(cluster_name, env_name, version):
     environ['CI_PROJECT_DIR'] = g_base_dir
     environ['FULL_ENV_NAME'] = cluster_name + '/' + env_name
-    render_environment(env_name, cluster_name, g_templates_dir, g_inventory_dir, g_output_dir, g_base_dir)
+    render_environment(env_name, cluster_name, g_templates_dirs, g_inventory_dir, g_output_dir, g_base_dir)
     source_dir = f"{g_inventory_dir}/{cluster_name}/{env_name}"
     generated_dir = f"{g_output_dir}/{cluster_name}/{env_name}"
     files_to_compare = get_all_files_in_dir(source_dir)
