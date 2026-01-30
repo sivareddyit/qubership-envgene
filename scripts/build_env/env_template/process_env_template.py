@@ -84,7 +84,7 @@ async def resolve_artifact_new_logic(app_def: Application, app_version: str, tem
         if "-SNAPSHOT" in app_version:
             resolved_version = extract_snapshot_version(template_url, app_version)
     logger.info(f"Environment template url has been resolved: {template_url}")
-    artifact_dest = tempfile.mktemp(suffix='.zip')
+    artifact_dest = tempfile.mkstemp(suffix='.zip')[1]
     artifact.download(template_url, artifact_dest, cred)
     unpack_archive(artifact_dest, template_dest)
     return resolved_version
@@ -142,7 +142,7 @@ async def resolve_artifact_old_logic(env_definition: dict, template_dest: str, c
         if "-SNAPSHOT" in dd_version:
             resolved_version = extract_snapshot_version(template_url, dd_version)
     logger.info(f"Environment template url has been resolved: {template_url}")
-    artifact_dest = tempfile.mkstemp(suffix='.zip')
+    artifact_dest = tempfile.mkstemp(suffix='.zip')[1]
     artifact.download(template_url, artifact_dest, cred)
     unpack_archive(artifact_dest, template_dest)
     return resolved_version
@@ -173,16 +173,21 @@ def process_env_template() -> dict:
         template_dest = f'{project_dir}/{key}_template'
 
         if not is_valid_appver(appver):
-            if not key == "common": continue
+            if not key == "common":
+                continue
             registry_dict = openYaml(Path(f"{project_dir}/configuration/registry.yml"))
+
             logger.info('Using template resolving old logic')
             tasks[key] = resolve_artifact_old_logic(env_definition, template_dest, cred_config, registry_dict)
+            continue
 
         app_name, app_version = appver[0], appver[1]
         artifact_path = getAppDefinitionPath(project_dir, app_name)
-        if not artifact_path: raise FileNotFoundError(f"No artifact definition file found for {app_name}")
+        if not artifact_path:
+            raise FileNotFoundError(f"No artifact definition file found for {app_name}")
         app_def = Application.model_validate(openYaml(artifact_path))
         cred = get_registry_creds(app_def.registry, cred_config)
+
         logger.info(f'Use template resolving new logic for {appver}')
         tasks[key] = resolve_artifact_new_logic(app_def, app_version, template_dest, cred)
 
