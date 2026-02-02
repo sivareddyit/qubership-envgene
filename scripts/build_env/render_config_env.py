@@ -129,7 +129,7 @@ class EnvGenerator:
         logger.info(f"Loaded env_template from {env_template_path}")
         return env_template
 
-    def set_env_template(self):
+    def set_env_templates(self):
         env_template_name = self.ctx.current_env["env_template"]
 
         # Common template is required
@@ -149,16 +149,16 @@ class EnvGenerator:
             origin_template = self.find_env_template_in_dir(self.ctx.templates_dirs.get('origin'), env_template_name)
             if origin_template:
                 self.ctx.origin_env_template = origin_template
-        
+
     def setup_base_context(self, extra_env: dict):
         all_vars = dict(os.environ)
         self.ctx.update(extra_env)
         self.ctx.env_vars.update(all_vars)
-        
+
         self.set_inventory()
         self.set_cloud_passport()
         self.generate_config()
-        
+
         current_env = self.ctx.config["environment"]
         self.ctx.current_env = current_env
 
@@ -221,7 +221,7 @@ class EnvGenerator:
         elif ns_name == peer_name:
             ns_template_name += "-peer"
         logger.debug(f'After appending the ns name : {ns_template_name}')
-        return ns_template_name 
+        return ns_template_name
 
     def generate_solution_structure(self):
         sd_path_stem = f'{self.ctx.current_env_dir}/Inventory/solution-descriptor/sd'
@@ -463,10 +463,10 @@ class EnvGenerator:
             output_dir / cluster_name / f"{config_file_name}.yaml",
             output_dir / cluster_name / f"{config_file_name}.yml",
         ]
-        
+
         global_config_paths = [f for f in potential_global_config_files if f.exists()]
         cluster_config_paths = [f for f in potential_cluster_config_files if f.exists()]
-        
+
         if not global_config_paths and not cluster_config_paths:
             logger.info("No appregdef_config file found, skipping overrides")
             return
@@ -505,10 +505,10 @@ class EnvGenerator:
             template_name = self.get_template_name(template_path)
             if template_name in profile_names:
                 self.render_from_file_to_file(template_path, self.get_rendered_target_path(template_path))
-                
+
     def validate_appregdefs(self):
         render_dir = self.ctx.current_env_dir
-        
+
         appdef_dir = f"{render_dir}/AppDefs"
         regdef_dir = f"{render_dir}/RegDefs"
 
@@ -532,7 +532,7 @@ class EnvGenerator:
         logger.info(f"Starting rendering app_reg_defs for {env_name}. Input params are:\n{dump_as_yaml_format(extra_env)}")
         with self.ctx.use():
             self.setup_base_context(extra_env)
-            
+
             current_env_dir = self.ctx.current_env_dir
             templates_dir = self.ctx.templates_dir
             patterns = ["*.yaml.j2", "*.yml.j2", "*.j2", "*.yaml", "*.yml"]
@@ -546,7 +546,7 @@ class EnvGenerator:
             self.set_appreg_def_overrides()
             self.render_app_defs()
             self.render_reg_defs()
-            
+
             self.validate_appregdefs()
 
     def render_config_env(self, env_name: str, extra_env: dict):
@@ -580,7 +580,7 @@ class EnvGenerator:
 
             current_env_dir = f'{self.ctx.render_dir}/{self.ctx.env}'
             self.ctx.current_env_dir = current_env_dir
-            self.set_env_template()
+            self.set_env_templates()
 
             self.generate_bgd_file()
             self.generate_solution_structure()
