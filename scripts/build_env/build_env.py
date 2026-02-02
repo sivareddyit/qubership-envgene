@@ -16,6 +16,14 @@ from cloud_passport import process_cloud_passport
 # const
 GENERATED_HEADER = "The contents of this file is generated from template artifact: %s.\nContents will be overwritten by next generation.\nPlease modify this contents only for development purposes or as workaround."
 
+# Pattern to match template directories like from_common_template, from_origin_template, from_peer_template
+TEMPLATE_DIR_PATTERN = re.compile(r'/from_\w+_template/')
+
+
+def is_from_template_dir(file_path: str) -> bool:
+    """Check if file path is from a template directory (from_*_template)."""
+    return bool(TEMPLATE_DIR_PATTERN.search(file_path))
+
 
 def find_namespaces(dir):
     result = []
@@ -55,10 +63,10 @@ def create_role_specific_paramset_map(base_paramset_map: dict, parameters_dir: s
         if paramset_name not in merged_map:
             merged_map[paramset_name] = entries
             continue
-        # Keep paramsets from_instance and replace template paramsets
+        # Keep non-template paramsets (instance and root-level) and replace template paramsets
         filtered_base_entries = [
             e for e in merged_map[paramset_name]
-            if 'from_template' not in e['filePath'] or role_dir_suffix in e['filePath']
+            if not is_from_template_dir(e['filePath']) or role_dir_suffix in e['filePath']
         ]
         merged_map[paramset_name] = filtered_base_entries + entries
 
@@ -209,10 +217,10 @@ def sort_paramsets_with_same_name(entries: list[dict]) -> list[dict]:
     # strict order processing paramsets template -> instance
     def sort_key(e):
         path = e["filePath"]
-        if "from_template" in path:
-            return 1, path
-        elif "from_instance" in path:
+        if "from_instance" in path:
             return 2, path
+        elif is_from_template_dir(path):
+            return 1, path
         return 0, path
 
     return sorted(entries, key=sort_key)
@@ -290,7 +298,7 @@ def convertParameterSetsToParameters(templatePath, paramsTemplate, paramsetsTag,
             else:
                 paramSetAppParams = []
             paramsetDefinitionComment = "paramset: " + paramSetName + " version: " + str(
-                paramSetVersion) + " source: " + ("template" if "from_template" in paramSetFile else "instance")
+                paramSetVersion) + " source: " + ("template" if is_from_template_dir(paramSetFile) else "instance")
             # process parameters in ParamSet
             for k in paramSetParameters:
                 # get value with potential merge of dicts
@@ -508,7 +516,7 @@ def build_env(env_name, env_instances_dir, parameters_dir, env_template_dir, res
     # pathes
     tenantTemplatePath = env_dir + "/tenant.yml"
     cloudTemlatePath = env_dir + "/cloud.yml"
-    namespaces = get_namespaces()
+    namespaces = get_namespaces(Path(env_dir))
     # env specific parameters map - will be filled with env specific parameters during template processing
     env_specific_parameters_map = {}
     env_specific_parameters_map["namespaces"] = {}
