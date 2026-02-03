@@ -1,4 +1,5 @@
 from os import environ
+import shutil
 
 import pytest
 from envgenehelper import *
@@ -6,8 +7,11 @@ from envgenehelper import *
 from main import render_environment, cleanup_resulting_dir
 from envgenehelper.test_helpers import TestHelpers
 
+# Set to True to update expected test data with newly rendered output
+UPDATE_TEST_DATA = False
+
 test_data = [
-    # (cluster_name, environment_name, template)
+    # (cluster_name, environment_name, template[, extra_templates_dirs])
     ("cluster-01", "env-01", "composite-prod"),
     ("cluster-01", "env-02", "composite-dev"),
     ("cluster-01", "env-03", "composite-dev"),
@@ -16,6 +20,7 @@ test_data = [
     ("cluster01", "env03", "test-template-1"),
     ("cluster01", "env04", "test-template-2"),
     ("bgd-cluster","bgd-env","bgd"),
+    ("bgd-cluster", "bgd-ns-artifacts-env", "bgd-ns-artifacts", {"peer": "test_data/test_templates_peer", "origin": "test_data/test_templates_origin"}),
     ("cluster03", "rpo-replacement-mode", "simple"),
 ]
 
@@ -35,16 +40,57 @@ def change_test_dir(monkeypatch):
     monkeypatch.chdir(base_dir)
 
 
-@pytest.mark.parametrize("cluster_name, env_name, version", test_data)
-def test_render_envs(cluster_name, env_name, version):
+def _update_test_data(source_dir, generated_dir):
+    source_path = Path(source_dir)
+    generated_path = Path(generated_dir)
+
+    # Directories and files to sync from generated to source
+    dirs_to_sync = ["Applications", "Namespaces", "Profiles"]
+    files_to_sync = ["cloud.yml", "tenant.yml", "bg_domain.yml", "composite_structure.yml"]
+
+    for dir_name in dirs_to_sync:
+        src = generated_path / dir_name
+        dst = source_path / dir_name
+        if src.exists():
+            if dst.exists():
+                shutil.rmtree(dst)
+            shutil.copytree(src, dst)
+        elif dst.exists():
+            shutil.rmtree(dst)
+
+    for file_name in files_to_sync:
+        src = generated_path / file_name
+        dst = source_path / file_name
+        if src.exists():
+            shutil.copy2(src, dst)
+        elif dst.exists():
+            dst.unlink()
+
+    logger.info(f"Updated test data in {source_dir}")
+
+
+@pytest.mark.parametrize("test_entry", test_data)
+def test_render_envs(test_entry):
+    cluster_name, env_name, version = test_entry[0], test_entry[1], test_entry[2]
+    extra_templates_dirs = test_entry[3] if len(test_entry) > 3 else None
+
+    templates_dirs = dict(g_templates_dirs)
+    if extra_templates_dirs:
+        for k, v in extra_templates_dirs.items():
+            templates_dirs[k] = str((base_dir / v).resolve())
+
     environ['CI_PROJECT_DIR'] = g_base_dir
     environ['FULL_ENV_NAME'] = cluster_name + '/' + env_name
-    render_environment(env_name, cluster_name, g_templates_dirs, g_inventory_dir, g_output_dir, g_base_dir)
+    render_environment(env_name, cluster_name, templates_dirs, g_inventory_dir, g_output_dir, g_base_dir)
     source_dir = f"{g_inventory_dir}/{cluster_name}/{env_name}"
     generated_dir = f"{g_output_dir}/{cluster_name}/{env_name}"
-    files_to_compare = get_all_files_in_dir(source_dir)
-    logger.info(dump_as_yaml_format(files_to_compare))
-    TestHelpers.assert_dirs_content(source_dir, generated_dir, True, False)
+
+    if UPDATE_TEST_DATA:
+        _update_test_data(source_dir, generated_dir)
+    else:
+        files_to_compare = get_all_files_in_dir(source_dir)
+        logger.info(dump_as_yaml_format(files_to_compare))
+        TestHelpers.assert_dirs_content(source_dir, generated_dir, True, False)
 
 
 def setup_test_dir(tmp_path):

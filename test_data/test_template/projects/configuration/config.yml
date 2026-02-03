@@ -1,3 +1,0 @@
-crypt: false
-crypt_backend: Fernet
-artifact_definitions_discovery_mode: auto
