@@ -233,7 +233,7 @@ class EnvGenerator:
     def _find_ns_config_by_name(self, env_template: dict, ns_name: str, templates_dir: Path = None) -> dict | None:
         for ns in env_template.get("namespaces", []):
             # Check template_override name first
-            override_name = self.fetch_template_override_name(ns)
+            override_name = self._fetch_template_override_name(ns)
             if override_name == ns_name:
                 return ns
             # Check if template_path renders to matching name
@@ -351,7 +351,7 @@ class EnvGenerator:
             return
         self.render_from_file_to_file(Template(template).render(self.ctx.as_dict()), target_path)
 
-    def fetch_template_override_name(self, ns: dict) -> str:
+    def _fetch_template_override_name(self, ns: dict) -> str:
         template_override = ns.get("template_override")
         if not template_override:
             return ""
