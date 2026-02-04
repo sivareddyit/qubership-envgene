@@ -8,7 +8,7 @@ import pathlib
 from pathlib import Path
 
 from envgenehelper import *
-from envgenehelper.business_helper import get_namespace_role, get_namespaces
+from envgenehelper.business_helper import get_namespace_role, get_namespaces, NamespaceRole
 from resource_profiles import processResourceProfiles
 from schema_validation import checkEnvSpecificParametersBySchema
 from cloud_passport import process_cloud_passport
@@ -48,29 +48,25 @@ def processFileList(mask, dict, dirPointer):
             dict[extractNameFromFile(filePath)] = [{"filePath": filePath, "envSpecific": False}]
     return dict
 
-def create_role_specific_paramset_map(base_paramset_map: dict, parameters_dir: str, role: str) -> dict:
-    role_dir_suffix = f'from_{role}_template'
-    role_specific_dir = os.path.join(parameters_dir, role_dir_suffix)
+def create_role_specific_paramset_map(base_paramset_map: dict, role: NamespaceRole) -> dict:
+    if role == NamespaceRole.ORIGIN:
+        other_role_dirs = ['from_peer_template']
+    elif role == NamespaceRole.PEER:
+        other_role_dirs = ['from_origin_template']
+    else:
+        other_role_dirs = ['from_origin_template', 'from_peer_template']
 
-    role_paramset_map = createParamsetsMap(role_specific_dir)
+    merged_map = {}
 
-    if not role_paramset_map:
-        return base_paramset_map
-
-    merged_map = copy.deepcopy(base_paramset_map)
-
-    for paramset_name, entries in role_paramset_map.items():
-        if paramset_name not in merged_map:
-            merged_map[paramset_name] = entries
-            continue
-        # Keep non-template paramsets (instance and root-level) and replace template paramsets
-        filtered_base_entries = [
-            e for e in merged_map[paramset_name]
-            if not is_from_template_dir(e['filePath']) or role_dir_suffix in e['filePath']
+    for paramset_name, entries in base_paramset_map.items():
+        filtered_entries = [
+            e for e in entries
+            if not any(other_dir in e['filePath'] for other_dir in other_role_dirs)
         ]
-        merged_map[paramset_name] = filtered_base_entries + entries
+        if filtered_entries:
+            merged_map[paramset_name] = filtered_entries
 
-    logger.info(f"Created {role}-specific paramset map with {len(role_paramset_map)} role-specific paramsets")
+    logger.info(f"Created {role.name}-specific paramset map: filtered out entries from {other_role_dirs}")
     return merged_map
 
 def createParamsetsMap(dir):
@@ -556,8 +552,9 @@ def build_env(env_name, env_instances_dir, parameters_dir, env_template_dir, res
 
     # process namespaces
     template_namespace_names = []
-    origin_paramset_map = create_role_specific_paramset_map(paramset_map, parameters_dir, 'origin')
-    peer_paramset_map = create_role_specific_paramset_map(paramset_map, parameters_dir, 'peer')
+    origin_paramset_map = create_role_specific_paramset_map(paramset_map, NamespaceRole.ORIGIN)
+    peer_paramset_map = create_role_specific_paramset_map(paramset_map, NamespaceRole.PEER)
+    common_paramset_map = create_role_specific_paramset_map(paramset_map, NamespaceRole.COMMON)
     for ns in namespaces:
         logger.info(f"Processing namespace: {ns.definition_path}")
         template_namespace_names.append(ns.postfix)
@@ -568,7 +565,7 @@ def build_env(env_name, env_instances_dir, parameters_dir, env_template_dir, res
         elif ns.role == NamespaceRole.PEER:
             ns_paramset_map = peer_paramset_map
         else:
-            ns_paramset_map = paramset_map
+            ns_paramset_map = common_paramset_map
         processTemplate(
             ns.definition_path,
             ns.postfix,
