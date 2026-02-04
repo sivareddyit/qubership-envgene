@@ -170,7 +170,10 @@ def process_env_template() -> dict:
     cred_config = render_creds()
 
     for key, appver in appvers.items():
-        template_dest = f'{project_dir}/{key}_template'
+        if key == 'common':
+            template_dest = f'{project_dir}/tmp'
+        else:
+            template_dest = f'{project_dir}/tmp/{key}'
 
         if not is_valid_appver(appver):
             if not key == "common":

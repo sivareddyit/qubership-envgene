@@ -298,13 +298,13 @@ if __name__ == "__main__":
     environment = getenv_with_error("ENVIRONMENT_NAME")
     # Build template directories dict - common is required, peer and origin are optional
     g_template_dirs = {
-        'common': f"{base_dir}/common_template",
+        'common': f"{base_dir}/tmp/templates",
     }
     # Add optional templates only if they exist
-    origin_template_path = f"{base_dir}/origin_template"
+    origin_template_path = f"{base_dir}/tmp/origin/templates"
     if check_dir_exists(origin_template_path):
         g_template_dirs['origin'] = origin_template_path
-    peer_template_path = f"{base_dir}/peer_template"
+    peer_template_path = f"{base_dir}/tmp/peer/templates"
     if check_dir_exists(peer_template_path):
         g_template_dirs['peer'] = peer_template_path
     g_all_instances_dir = f"{base_dir}/environments"
