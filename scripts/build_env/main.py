@@ -29,8 +29,13 @@ def prepare_folders_for_rendering(env_name, cluster_name, source_env_dir, templa
     cleanup_resulting_dir(Path(output_dir) / cluster_name / env_name)
     # copying parameters from templates and instances
     for k, v in templates_dirs.items():
-        if v and check_dir_exists(f'{v}/parameters'):
-            copy_path(f'{v}/parameters', f'{render_parameters_dir}/from_{k}_template')
+        if not (v and check_dir_exists(f'{v}/parameters')):
+            continue
+        if k == 'common':
+            param_dir_name = 'from_template'
+        else:
+            param_dir_name = f'from_{k}_template'
+        copy_path(f'{v}/parameters', f'{render_parameters_dir}/{param_dir_name}')
     cluster_path = getDirName(source_env_dir)
     instances_dir = getDirName(cluster_path)
     check_dir_exist_and_create(f'{render_parameters_dir}/from_instance')
@@ -38,7 +43,7 @@ def prepare_folders_for_rendering(env_name, cluster_name, source_env_dir, templa
     copy_path(f'{cluster_path}/parameters', render_parameters_dir)
     copy_path(f'{source_env_dir}/{INVENTORY_DIR_NAME}/parameters', f'{render_parameters_dir}/from_instance')
     # copying all template resource profiles
-    copy_path(f'{templates_dirs}/tmp/resource_profiles', render_profiles_dir)
+    copy_path(f'{templates_dirs['common']}/tmp/resource_profiles', render_profiles_dir)
     return render_env_dir
 
 
