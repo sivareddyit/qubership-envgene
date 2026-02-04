@@ -112,7 +112,7 @@ class EnvGenerator:
     def find_env_template_in_dir(self, template_dir, env_template_name):
         if not template_dir:
             return None
-        env_template_path_stem = f'{template_dir}/templates/env_templates/{env_template_name}'
+        env_template_path_stem = f'{template_dir}/env_templates/{env_template_name}'
         env_template_path = next(iter(find_all_yaml_files_by_stem(env_template_path_stem)), None)
         if not env_template_path:
             return None
