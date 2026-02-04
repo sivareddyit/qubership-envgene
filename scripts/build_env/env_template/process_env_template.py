@@ -161,8 +161,8 @@ def process_env_template() -> dict:
 
     appvers = {
         'common': parse_artifact_appver(env_definition, 'envTemplate.artifact'),
-        'origin': parse_artifact_appver(env_definition, 'bgNsArtifacts.origin'),
-        'peer': parse_artifact_appver(env_definition, 'bgNsArtifacts.peer'),
+        'origin': parse_artifact_appver(env_definition, 'envTemplate.bgNsArtifacts.origin'),
+        'peer': parse_artifact_appver(env_definition, 'envTemplate.bgNsArtifacts.peer'),
     }
 
     tasks = {}
