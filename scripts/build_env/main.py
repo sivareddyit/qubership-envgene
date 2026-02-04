@@ -43,7 +43,7 @@ def prepare_folders_for_rendering(env_name, cluster_name, source_env_dir, templa
     copy_path(f'{cluster_path}/parameters', render_parameters_dir)
     copy_path(f'{source_env_dir}/{INVENTORY_DIR_NAME}/parameters', f'{render_parameters_dir}/from_instance')
     # copying all template resource profiles
-    copy_path(f'{templates_dirs['common']}/tmp/resource_profiles', render_profiles_dir)
+    copy_path(f'{templates_dirs['common']}/resource_profiles', render_profiles_dir)
     return render_env_dir
 
 

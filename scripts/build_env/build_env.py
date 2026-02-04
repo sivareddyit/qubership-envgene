@@ -17,7 +17,7 @@ from cloud_passport import process_cloud_passport
 GENERATED_HEADER = "The contents of this file is generated from template artifact: %s.\nContents will be overwritten by next generation.\nPlease modify this contents only for development purposes or as workaround."
 
 # Pattern to match template directories like from_common_template, from_origin_template, from_peer_template
-TEMPLATE_DIR_PATTERN = re.compile(r'/from_\w+_template/')
+TEMPLATE_DIR_PATTERN = re.compile(r'/from_(\w+_)?template/')
 
 
 def is_from_template_dir(file_path: str) -> bool:
