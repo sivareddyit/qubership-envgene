@@ -29,23 +29,26 @@ function updateCertificates {
     if [[ -e "${CA_FILE}" && ! -z "${CA_FILE}" ]]; then
       getLinuxDisto
       echo "Linux Distribution identified as: $DIST"
+      # Derive destination filename from source so multiple CAs do not overwrite each other; use .crt for compatibility
+      LOCAL_NAME="$(basename "${CA_FILE}" | sed 's/\.[^.]*$//').crt"
       if [[ "${DIST}" == *"debian"* || "${DIST}" == *"ubuntu"* ]]; then
-        cp "${CA_FILE}" /usr/local/share/ca-certificates/
+        cp "${CA_FILE}" "/usr/local/share/ca-certificates/${LOCAL_NAME}"
         update-ca-certificates --fresh
         echo "certs from ${CA_FILE} added to trusted root"
         export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt #https://ubuntu.com/server/docs/install-a-root-ca-certificate-in-the-trust-store
       elif [[ "${DIST}" == *"centos"* ]]; then
-        cp "${CA_FILE}" /etc/pki/ca-trust/source/anchors/ca.crt
+        cp "${CA_FILE}" "/etc/pki/ca-trust/source/anchors/${LOCAL_NAME}"
         update-ca-trust
         echo "certs from ${CA_FILE} added to trusted root"
         export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt #https://techjourney.net/update-add-ca-certificates-bundle-in-redhat-centos/
       elif [[ "${DIST}" == *"alpine"* ]]; then
-        cat "${CA_FILE}" >> /etc/ssl/certs/ca-certificates.crt
+        cp "${CA_FILE}" "/usr/local/share/ca-certificates/${LOCAL_NAME}"
+        update-ca-certificates
         echo "certs from ${CA_FILE} added to trusted root"
-        export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt #we copy the certs to this file in line 43
+        export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
       elif [[ "${DIST}" == *"red hat"* ]]; then
         mkdir -p /etc/pki/ca-trust/source/anchors
-        cp "${CA_FILE}" /etc/pki/ca-trust/source/anchors/
+        cp "${CA_FILE}" "/etc/pki/ca-trust/source/anchors/${LOCAL_NAME}"
         update-ca-trust
         echo "certs from ${CA_FILE} added to trusted root"
         export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt #https://www.redhat.com/en/blog/configure-ca-trust-list
