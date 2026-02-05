@@ -167,7 +167,6 @@ def build_environment(env_name, cluster_name, templates_dirs, source_env_dir, al
     envvars["current_env"] = current_env  # Object for Jinja2 templates that need current_env.environmentName
     envvars["cluster_name"] = cluster_name
     envvars["templates_dirs"] = templates_dirs
-    # Keep templates_dir for backward compatibility (points to common template)
     envvars["templates_dir"] = templates_dirs.get('common', '')
     envvars["env_instances_dir"] = getAbsPath(render_env_dir)
     envvars["render_dir"] = getAbsPath(render_dir)
@@ -281,9 +280,7 @@ def render_environment(env_name, cluster_name, templates_dirs, all_instances_dir
 
     check_environment_is_valid_or_fail(env_name, cluster_name, all_instances_dir,
                                        validate_env_definition_by_schema=True)
-    # searching for env directory in instances
-    # Validate parameters from all template directories (common is required, peer/origin are optional)
-    for template_key, template_dir in templates_dirs.items():
+    for _, template_dir in templates_dirs.items():
         if template_dir:
             validate_parameters(template_dir, all_instances_dir, cluster_name, env_name)
     env_dir = get_env_instances_dir(env_name, cluster_name, all_instances_dir)
@@ -299,11 +296,9 @@ if __name__ == "__main__":
     base_dir = getenv_with_error('CI_PROJECT_DIR')
     cluster = getenv_with_error("CLUSTER_NAME")
     environment = getenv_with_error("ENVIRONMENT_NAME")
-    # Build template directories dict - common is required, peer and origin are optional
     g_template_dirs = {
         'common': f"{base_dir}/tmp/templates",
     }
-    # Add optional templates only if they exist
     origin_template_path = f"{base_dir}/tmp/origin/templates"
     if check_dir_exists(origin_template_path):
         g_template_dirs['origin'] = origin_template_path

@@ -25,8 +25,8 @@ class Context(BaseModel):
     env: Optional[str] = ''
     render_dir: Optional[str] = ''
     cloud_passport: OrderedDict = Field(default_factory=OrderedDict)
-    templates_dir: Optional[Path] = None  # backward compatibility - points to common template
-    templates_dirs: dict = Field(default_factory=dict)  # dict of template dirs: {'common': path, 'peer': path, 'origin': path}
+    templates_dir: Optional[Path] = None
+    templates_dirs: dict = Field(default_factory=dict)
     output_dir: Optional[str] = ''
     cluster_name: Optional[str] = ''
     env_definition: OrderedDict = Field(default_factory=OrderedDict)
@@ -123,7 +123,6 @@ class EnvGenerator:
     def set_env_templates(self):
         env_template_name = self.ctx.current_env["env_template"]
 
-        # Common template is required
         env_template_path_stem = f'{self.ctx.templates_dir}/env_templates/{env_template_name}'
         env_template = self.find_env_template_in_dir(self.ctx.templates_dir, env_template_name)
         if not env_template:
@@ -131,7 +130,6 @@ class EnvGenerator:
         logger.info(f"env_template = {env_template}")
         self.ctx.current_env_template = env_template
 
-        # Peer and origin templates are optional
         if self.ctx.templates_dirs:
             peer_template = self.find_env_template_in_dir(self.ctx.templates_dirs.get('peer'), env_template_name)
             if peer_template:
@@ -223,11 +221,9 @@ class EnvGenerator:
 
     def _find_ns_config_by_name(self, env_template: dict, ns_name: str, templates_dir: Path = None) -> dict | None:
         for ns in env_template.get("namespaces", []):
-            # Check template_override name first
             override_name = self._fetch_template_override_name(ns)
             if override_name == ns_name:
                 return ns
-            # Check if template_path renders to matching name
             ns_template_path = self._resolve_template_path(ns["template_path"], templates_dir)
             if ns_template_path:
                 rendered = self.render_from_file_to_obj(ns_template_path)
@@ -236,7 +232,6 @@ class EnvGenerator:
         return None
 
     def generate_ns_postfix(self, ns: dict, ns_template_path: str) -> str:
-        """Generate namespace directory name (e.g. 'billing' or 'billing-origin')."""
         base_name = ns.get("deploy_postfix") or self.get_template_name(ns_template_path)
         ns_name = self._get_ns_name_for_bgd(ns, ns_template_path)
         return base_name + self._get_bgd_suffix(ns_name)
