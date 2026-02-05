@@ -48,26 +48,26 @@ def processFileList(mask, dict, dirPointer):
             dict[extractNameFromFile(filePath)] = [{"filePath": filePath, "envSpecific": False}]
     return dict
 
-def create_role_specific_paramset_map(base_paramset_map: dict, role: NamespaceRole) -> dict:
+def create_role_specific_paramset_map(base_paramset_map: dict, role: NamespaceRole,) -> dict:
     if role == NamespaceRole.ORIGIN:
-        other_role_dirs = ['from_peer_template']
+        forbidden = ('from_peer_template', 'from_template')
     elif role == NamespaceRole.PEER:
-        other_role_dirs = ['from_origin_template']
+        forbidden = ('from_origin_template', 'from_template')
     else:
-        other_role_dirs = ['from_origin_template', 'from_peer_template']
+        forbidden = ('from_peer_template', 'from_origin_template')
 
-    merged_map = {}
+    result = {}
 
     for paramset_name, entries in base_paramset_map.items():
-        filtered_entries = [
+        kept = [
             e for e in entries
-            if not any(other_dir in e['filePath'] for other_dir in other_role_dirs)
+            if not any(f in e['filePath'] for f in forbidden)
         ]
-        if filtered_entries:
-            merged_map[paramset_name] = filtered_entries
+        if kept:
+            result[paramset_name] = kept
 
-    logger.info(f"Created {role.name}-specific paramset map: filtered out entries from {other_role_dirs}")
-    return merged_map
+    logger.info(f"Created {role.name}-specific paramset map: filtered out entries from {forbidden}")
+    return result
 
 def createParamsetsMap(dir):
     result = {}

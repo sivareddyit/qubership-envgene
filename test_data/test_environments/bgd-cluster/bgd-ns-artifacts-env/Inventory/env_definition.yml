@@ -7,6 +7,9 @@ inventory:
   cloudPassport: "test-cloud-passport"
 envTemplate:
   name: "bgd-ns-artifacts"
+  bgNsArtifacts:
+    origin: "bgd-ns-artifacts"
+    peer: "bgd-ns-artifacts"
   additionalTemplateVariables: {}
   sharedTemplateVariables: []
   envSpecificParamsets: {}

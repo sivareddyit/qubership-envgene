@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from enum import Enum
 import re
 from os import getenv
@@ -386,12 +386,13 @@ class NamespaceFile:
     postfix: str = field(init=False)
     definition_path: Path = field(init=False)
     role: NamespaceRole = field(init=False)
+    bgd: InitVar[dict | None] = None
 
-    def __post_init__(self):
+    def __post_init__(self, bgd: dict | None):
         self.definition_path = self.path.joinpath('namespace.yml')
         self.name = openYaml(self.definition_path)['name']
         self.postfix = self.path.name
-        self.role = get_namespace_role(self.name)
+        self.role = get_namespace_role(self.name, bgd)
 
 def get_namespaces_path(env_dir: Path | None = None) -> Path:
     env_dir = env_dir or get_current_env_dir_from_env_vars()
@@ -399,24 +400,25 @@ def get_namespaces_path(env_dir: Path | None = None) -> Path:
     logger.debug(namespaces_path)
     return namespaces_path
 
-def get_namespaces(env_dir: Path | None = None) -> list[NamespaceFile]:
-    namespaces_path = get_namespaces_path(env_dir)
-    if not check_dir_exists(str(namespaces_path)):
-        return []
-    namespace_paths = [p for p in namespaces_path.iterdir() if p.is_dir()]
-    namespaces = [NamespaceFile(path=p) for p in namespace_paths]
-    logger.debug(namespaces)
-    return namespaces
-
 def get_bgd_path(env_dir: Path | None = None) -> Path:
     env_dir = env_dir or get_current_env_dir_from_env_vars()
     bgd_path = env_dir.joinpath('bg_domain.yml')
     logger.debug(bgd_path)
     return bgd_path
 
-@cache
 def get_bgd_object(env_dir: Path | None = None) -> CommentedMap:
     bgd_path = get_bgd_path(env_dir)
     bgd_object = openYaml(bgd_path, allow_default=True)
     logger.debug(bgd_object)
     return bgd_object
+
+def get_namespaces(env_dir: Path | None = None) -> list[NamespaceFile]:
+    namespaces_path = get_namespaces_path(env_dir)
+    if not check_dir_exists(str(namespaces_path)):
+        return []
+    namespace_paths = [p for p in namespaces_path.iterdir() if p.is_dir()]
+    bgd = get_bgd_object(env_dir)
+    namespaces = [NamespaceFile(path=p, bgd=bgd) for p in namespace_paths]
+    logger.debug(namespaces)
+    return namespaces
+

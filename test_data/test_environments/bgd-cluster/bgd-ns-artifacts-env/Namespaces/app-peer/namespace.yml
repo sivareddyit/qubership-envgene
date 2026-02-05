@@ -13,6 +13,7 @@ deployParameters:
   ENVGENE_CONFIG_REF_NAME: "branch_name"
   ENVGENE_CONFIG_TAG: "No Ref tag"
   ROLE_SPECIFIC_PARAM: "PEER"
+  param-A: "value from peer template version of paramset" # paramset: paramset-A version: n/a source: template
 e2eParameters:
   APP_NAMESPACE: "bgd-ns-artifacts-env-app"
 technicalConfigurationParameters:
