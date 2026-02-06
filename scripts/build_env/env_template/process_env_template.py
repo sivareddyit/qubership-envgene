@@ -170,7 +170,7 @@ def process_env_template() -> dict:
     env_definition = getEnvDefinition()
 
     appvers = {
-        'common': parse_artifact_appver(env_definition, 'envTemplate.artifact', True),
+        'common': parse_artifact_appver(env_definition, 'envTemplate.artifact'),
         'origin': parse_artifact_appver(env_definition, 'envTemplate.bgNsArtifacts.origin'),
         'peer': parse_artifact_appver(env_definition, 'envTemplate.bgNsArtifacts.peer'),
     }
