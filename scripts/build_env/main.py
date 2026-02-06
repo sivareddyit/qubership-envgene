@@ -181,7 +181,7 @@ def build_environment(env_name, cluster_name, templates_dirs, source_env_dir, al
     env_specific_resource_profile_map = get_env_specific_resource_profiles(source_env_dir, all_instances_dir,
                                                                            ENV_SPECIFIC_RESOURCE_PROFILE_SCHEMA)
     build_env(env_name, source_env_dir, render_parameters_dir, render_dir, render_profiles_dir,
-              env_specific_resource_profile_map, all_instances_dir, render_context)
+              env_specific_resource_profile_map, all_instances_dir, render_context, templates_dirs)
     resulting_dir = post_process_env_after_rendering(env_name, render_env_dir, source_env_dir, all_instances_dir,
                                                      output_dir)
 
