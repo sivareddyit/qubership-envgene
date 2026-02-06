@@ -12,8 +12,10 @@ from envgenehelper import unpack_archive, get_cred_config, check_dir_exist_and_c
 from render_config_env import render_obj_by_context, Context
 
 
-def parse_artifact_appver(env_definition: dict, attribute_str: str) -> list[str]:
+def parse_artifact_appver(env_definition: dict, attribute_str: str, validate: bool=False) -> list[str]:
     artifact_appver = str(get_or_create_nested_yaml_attribute(env_definition, attribute_str, ""))
+    if validate and not artifact_appver:
+        raise ValueError(f"{attribute_str} is empty or missing from env_definition: {env_definition}")
     logger.info(f"Artifact version in {attribute_str}: {artifact_appver}")
     return artifact_appver.split(':')
 
@@ -160,7 +162,7 @@ def process_env_template() -> dict:
     env_definition = getEnvDefinition()
 
     appvers = {
-        'common': parse_artifact_appver(env_definition, 'envTemplate.artifact'),
+        'common': parse_artifact_appver(env_definition, 'envTemplate.artifact', True),
         'origin': parse_artifact_appver(env_definition, 'envTemplate.bgNsArtifacts.origin'),
         'peer': parse_artifact_appver(env_definition, 'envTemplate.bgNsArtifacts.peer'),
     }

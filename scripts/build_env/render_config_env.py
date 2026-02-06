@@ -1,10 +1,6 @@
-import os
-import re
-from collections import OrderedDict
 from collections.abc import Iterable
 from contextlib import contextmanager
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 from deepmerge import always_merger
@@ -18,6 +14,7 @@ from jinja.jinja import create_jinja_env
 from jinja.replace_ansible_stuff import replace_ansible_stuff, escaping_quotation
 
 SCHEMAS_DIR = Path(__file__).resolve().parents[2] / "schemas"
+
 yml = create_yaml_processor()
 
 
@@ -88,7 +85,8 @@ def render_obj_by_context(template: dict, context: Context) -> dict:
 class EnvGenerator:
     def __init__(self):
         self.ctx = Context()
-        logger.debug("EnvGenerator initialized with context: %s", self.ctx.dict(exclude_none=True, exclude={"env_vars"}))
+        logger.debug("EnvGenerator initialized with context: %s",
+                     self.ctx.dict(exclude_none=True, exclude={"env_vars"}))
 
     def set_inventory(self):
         env_definition = getEnvDefinition(self.ctx.env_instances_dir)
@@ -174,7 +172,7 @@ class EnvGenerator:
         namespace_names = [ns.name for ns in get_namespaces()]
         bgd = get_bgd_object()
         mismatch = ""
-        for k,v in bgd.items():
+        for k, v in bgd.items():
             if 'Namespace' not in k:
                 continue
             if v['name'] not in namespace_names:
@@ -555,7 +553,8 @@ class EnvGenerator:
                 validate_yaml_by_scheme_or_fail(file, str(SCHEMAS_DIR / "regdef.schema.json"))
 
     def process_app_reg_defs(self, env_name: str, extra_env: dict):
-        logger.info(f"Starting rendering app_reg_defs for {env_name}. Input params are:\n{dump_as_yaml_format(extra_env)}")
+        logger.info(
+            f"Starting rendering app_reg_defs for {env_name}. Input params are:\n{dump_as_yaml_format(extra_env)}")
         with self.ctx.use():
             self.setup_base_context(extra_env)
 
@@ -585,7 +584,7 @@ class EnvGenerator:
             self.ctx.cloud = self.calculate_cloud_name()
             self.ctx.tenant = current_env.get("tenant", '')
             self.ctx.deployer = current_env.get('deployer', '')
-            self.ctx.bgd = current_env.get('bg_domain','')
+            self.ctx.bgd = current_env.get('bg_domain', '')
             logger.info(f"current_env = {current_env}")
 
             self.ctx.update({
