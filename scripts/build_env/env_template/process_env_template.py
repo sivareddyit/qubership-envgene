@@ -9,15 +9,23 @@ from env_template.template_testing import run_env_test_setup
 from envgenehelper import getEnvDefinition, fetch_cred_value, getAppDefinitionPath
 from envgenehelper import openYaml, getenv_with_error, logger, get_or_create_nested_yaml_attribute
 from envgenehelper import unpack_archive, get_cred_config, check_dir_exist_and_create
+from envgenehelper.yaml_helper import get_nested_yaml_attribute_or_fail
 from render_config_env import render_obj_by_context, Context
 
 
-def parse_artifact_appver(env_definition: dict, attribute_str: str, validate: bool=False) -> list[str]:
-    artifact_appver = str(get_or_create_nested_yaml_attribute(env_definition, attribute_str, ""))
-    if validate and not artifact_appver:
+def parse_artifact_appver(env_definition: dict, attribute_str: str) -> list[str]:
+    try:
+        get_nested_yaml_attribute_or_fail(env_definition, attribute_str)
+        exists = True
+    except ValueError:
+        exists = False
+    appver = str(get_or_create_nested_yaml_attribute(env_definition, attribute_str, ""))
+
+    if exists and not appver:
         raise ValueError(f"{attribute_str} is empty or missing from env_definition: {env_definition}")
-    logger.info(f"Artifact version in {attribute_str}: {artifact_appver}")
-    return artifact_appver.split(':')
+    logger.info(f"Artifact version in {attribute_str}: {appver}", attribute_str, appver)
+    return appver.split(":")
+
 
 
 def get_registry_creds(registry: Registry, cred_config: dict) -> Credentials:
