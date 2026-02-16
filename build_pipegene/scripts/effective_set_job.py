@@ -66,6 +66,7 @@ def prepare_generate_effective_set_job(pipeline, full_env_name, env_name, cluste
             "--registries=${CI_PROJECT_DIR}/configuration/registry.yml",
             f"--sboms-path={sboms_path}",
             f"--sd-path={sd_path}",
+            f"--CUSTOM_PARAMS={custom_params}",
         ])
 
     logger.info(f'Prepare generate_effective_set job for {full_env_name}.')
