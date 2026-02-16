@@ -361,8 +361,8 @@ jobs:
           docker run --rm -v ${{ github.workspace }}:${{ env.CI_PROJECT_DIR }} -w ${{ env.CI_PROJECT_DIR }} --env-file .env.container --user root -e HOME=/root \
             ${{ env.DOCKER_IMAGE_NAME_EFFECTIVE_SET_GENERATOR }}:${{ env.DOCKER_IMAGE_TAG_EFFECTIVE_SET_GENERATOR }} \
             bash -c "
-              source /module/venv/bin/activate
               echo 'Executing effective set generation...'
+              source /module/venv/bin/activate
               /module/scripts/handle_certs.sh
               mkdir -p \"\${CI_PROJECT_DIR}/configuration/certs\"
               [ -f /default_cert.pem ] && cp /default_cert.pem \"\${CI_PROJECT_DIR}/configuration/certs/default_cert.pem\" || true
