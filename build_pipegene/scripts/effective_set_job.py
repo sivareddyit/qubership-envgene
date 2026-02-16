@@ -79,6 +79,7 @@ def prepare_generate_effective_set_job(pipeline, full_env_name, env_name, cluste
     if deployment_id:
         cmdb_cli_cmd_call.extend([f"--extra_params=DEPLOYMENT_SESSION_ID={deployment_id}"])
 
+    logger.info(f"befoe parsing custom_params : {custom_params}")
     if custom_params:
         logger.info(f"custom_params : {custom_params}")
         data = json.loads(custom_params)
